@@ -1,0 +1,91 @@
+QMainWindow, QWidget#GeneralTab, QWidget#MapTab, QFrame#MatchListFrame {
+    background-color: #33373B;
+}
+
+QListWidget {
+    color: #FFFFFF;
+    background-color: #33373B;
+    outline: none;
+}
+
+QListWidget::item {
+    height: 100px;
+    border-radius: 4px;
+}
+
+QListWidget::item:selected {
+    background-color: #2ecc71;
+}
+
+QPushButton {
+    background-color: transparent;
+    border: 1px solid #2ecc71;
+    border-radius: 5px;
+    color: #2ecc71;
+    padding: 20px;
+    font-size: 18px;
+    margin: 0px;
+}
+
+QPushButton:checked, QPushButton:pressed {
+    background-color: #2ecc71;
+    color: white;
+}
+
+QPushButton:disabled {
+    background-color: transparent;
+    color: gray;
+}
+
+QTabWidget::pane {
+    border: 2px solid #C2C7CB;
+    border-radius: 5px;
+}
+
+QTabWidget::tab-bar {
+    left: 5px; /* move to the right by 5px */
+}
+
+/* Style the tab using the tab sub-control. Note that
+    it reads QTabBar _not_ QTabWidget */
+QTabBar::tab {
+    background: #33373B;
+    border: 2px solid transparent;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    min-width: 8ex;
+    padding: 4px;
+    color: white;
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background: #494e52;
+}
+
+QTabBar::tab:selected {
+    border-bottom-width: 5px;
+    border-bottom-color: #2ecc71; /* same as pane color */
+    margin-bottom: -1px;
+}
+
+QLabel#nameLabel {
+    color: white;
+    font-size: 28px;
+    border: 1px solid white;
+}
+
+MatchRowView QLabel {
+    color: white;
+}
+
+MatchRowView {
+    border: 1px solid white;
+    border-radius: 4px;
+}
+
+QLabel#matchesUsedLabel {
+    color: white;
+    font-size: 18px;
+}
