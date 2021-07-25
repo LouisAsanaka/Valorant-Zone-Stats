@@ -11,9 +11,10 @@ from peewee import Model, Metadata, SqliteDatabase, FixedCharField, CharField, D
 from playhouse.shortcuts import model_to_dict
 
 import logging
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 from src.api.api import ValorantAPI, ValorantConstants
+from src.utils import get_executable_relative_path
 
 
 ZoneStats = Dict[str, Dict[str, Any]]
@@ -116,12 +117,7 @@ class MatchService:
         # TODO: Make sure directories don't get messed up after PyInstaller
         print(os.getcwd())
         print(sys.executable)
-        db_path: str
-        if getattr(sys, 'frozen', False):
-            db_path = (Path(sys.executable).parent / 'matches.db').__str__()
-        else:
-            db_path = 'matches.db'
-        db.init(db_path)
+        db.init(get_executable_relative_path('matches.db'))
         db.connect()
         db.create_tables([MatchModel])
 
@@ -161,7 +157,7 @@ class MatchService:
             my_score: int = player_info['stats']['score']
             queue: str = self._get_queue_from_provisioning_flow_id(match_info['matchInfo']['provisioningFlowID'])
 
-            # logging.info(f'({my_match_score} - {opponent_match_score}), {my_kills}/{my_deaths}/{my_assists}')
+            logging.debug(f'({my_match_score} - {opponent_match_score}), {my_kills}/{my_deaths}/{my_assists}')
 
             model = MatchModel.create(match_id=match_info['matchInfo']['matchId'], puuid=puuid, my_team=my_team,
                                       my_match_score=my_match_score, opponent_match_score=opponent_match_score,
@@ -170,7 +166,7 @@ class MatchService:
                                       queue=queue)
             return model_to_dict(model)
         except KeyError:
-            logging.info('Malformed match info.')
+            logging.debug('Malformed match info.')
             return None
 
     def store_new_matches(self, puuid: str, queue: Optional[str] = 'competitive'):
@@ -184,11 +180,13 @@ class MatchService:
                 stored_model = MatchModel.select().where(MatchModel.match_id == match_id).get()
                 all_matches.append(Match(match_model=model_to_dict(stored_model)))
 
+            logging.debug(f'Found {len(online_match_history["History"])} matches (expected {online_match_history["Total"]}) to process...')
+
             # Then fetch, store, and append the new matches
             for match in online_match_history['History']:
                 match_id = match['MatchID']
                 if match_id not in stored_match_history:
-                    # logging.info(f'Match with ID {match_id} not found, storing...')
+                    logging.debug(f'Match with ID {match_id} not found, storing...')
                     match_info = self.api_service.get_match_info(match_id)
                     all_matches.append(Match(match_model=self._store_match(match_info, puuid)))
             all_matches.sort(key=lambda m: m.date, reverse=True)

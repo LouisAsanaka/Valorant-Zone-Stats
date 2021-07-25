@@ -1,5 +1,14 @@
 import os
 import sys
+from src.utils import get_executable_relative_path
+import logging
+
+logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(filename=get_executable_relative_path('debug.log'),
+#                     filemode='a',
+#                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+#                     datefmt='%H:%M:%S',
+#                     level=logging.DEBUG)
 
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *

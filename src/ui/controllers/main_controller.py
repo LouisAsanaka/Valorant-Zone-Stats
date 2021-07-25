@@ -1,15 +1,12 @@
 from PySide2.QtCore import QObject, Slot, Signal, SignalInstance, QSettings
 
-import sys
-from pathlib import Path
-from pprint import pprint
 from threading import Thread
 from typing import Optional, List, Tuple
 
 from src.ui.views.main_view import MainView
 from src.models.models import PlayerData, Match
 from src.services.services import ApiService, MatchService, MapService, AnalyticsService
-from src.api.api import ValorantAPI
+from src.utils import get_executable_relative_path
 from src.ui.controllers.general_tab.general_controller import GeneralController
 from src.ui.controllers.map_tab.map_controller import MapController
 from src.ui.controllers.map_tab.map_list_controller import MapListController
@@ -45,12 +42,7 @@ class MainController(QObject):
         super().__init__()
 
         self.player_data: PlayerData = PlayerData()
-        settings_path: str
-        if getattr(sys, 'frozen', False):
-            settings_path = (Path(sys.executable).parent / 'settings.ini').__str__()
-        else:
-            settings_path = 'settings.ini'
-        self.settings: QSettings = QSettings(settings_path, QSettings.IniFormat)
+        self.settings: QSettings = QSettings(get_executable_relative_path('settings.ini'), QSettings.IniFormat)
         self._init_settings()
 
         self.main_view: MainView = main_view

@@ -33,9 +33,9 @@ Extract it to anywhere you would like, then run
 store your past matches for analysis, as Riot does not provide all past matches.
   
 ## Usage
-Run the program after VALORANT launches. Click on the "Fetch User" button, then click on the "Fetch Matches" button.
-This may take a while the first time, since it will be grabbing your recent matches from VALORANT. If matches do not
-appear, try changing your region. 
+Make sure the program is running on a computer where you are logged into VALORANT. Click on the "Fetch User" button, 
+then click on the "Fetch Matches" button. This may take a while the first time, since it will be grabbing your recent 
+matches from VALORANT. If matches do not appear, try changing your region. 
 
 The regions are: NA (North America), AP (Asia Pacific), EU (Europe), KO (Korea).
 
@@ -81,6 +81,7 @@ activate the virtualenv first!
       from VALORANT itself
 - Some code from [valclient.py](https://github.com/colinhartigan/valclient.py) by 
   [colinhartigan](https://github.com/colinhartigan)
+- floxay#8682 on Discord for suggestions for offline authentication
       
 ## TODO
 - [ ] Make UI polygons non-rectangular (match the shape of the map)
@@ -89,7 +90,7 @@ activate the virtualenv first!
 - [ ] Improve color coding for the maps (current it is green if K/D >= 1.0, red otherwise)
 - [ ] Potentially remake the map zones
 - [ ] Analyze other types of matches (unrated & customs) instead of only competitive
-- [ ] Offline mode (without needing VALORANT to be running)
+- [x] Offline mode (without needing VALORANT to be running)
 
 ## How?
 The program uses the same data the careers page gets (scoreboard, timelines, performance). The polygons that form the

@@ -31,7 +31,8 @@ class FetchMatchWorker(QObject):
         self.thread.start()
 
     def run(self):
-        # logging.info(f'Running on {threading.current_thread().name}')
+        logging.debug(f'Running on {threading.current_thread().name}')
+        logging.debug(f'Fetching matches for {self.puuid}...')
         result = self.match_service.store_new_matches(self.puuid)
         self.result.emit(result)
         self.finished.emit()

@@ -1,11 +1,15 @@
 import requests as r
+from urllib import parse
+from pprint import pprint
+from requests.cookies import create_cookie
 import os
 import base64
-from enum import Enum
 from typing import Optional, Dict, Tuple, Union, List
 import urllib3
 import json
+import yaml
 from enum import Enum
+import logging
 
 urllib3.disable_warnings()
 
@@ -99,14 +103,19 @@ class ValorantConstants:
 class ValorantAPI:
 
     UUID = str
+    Cookies = List[Dict]
     Headers = Dict[str, str]
 
     Regions = ('NA', 'EU', 'AP', 'KO')
     CLIENT_PLATFORM = 'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9'
 
+    REAUTH_URL: str = 'https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in&client_id=play-valorant-web-prod&response_type=token%20id_token'
+    ENTITLEMENTS_URL: str = 'https://entitlements.auth.riotgames.com/api/token/v1'
+
     def __init__(self, region: str):
         self.version: Optional[str] = None
         self.lockfile_contents: Optional[Dict[str, str]] = None
+        self.cookies_contents: Optional[ValorantAPI.Cookies] = None
         self.region: str = region.upper()
         self.cached_headers: Optional[ValorantAPI.Headers] = None
 
@@ -135,10 +144,71 @@ class ValorantAPI:
                 keys = ['name', 'PID', 'port', 'password', 'protocol']
                 self.lockfile_contents = dict(zip(keys, data))
                 return self.lockfile_contents
-        except Exception:
+        except Exception as e:
+            logging.error(f'Could not get contents of lockfile: {str(e)}')
             return None
 
-    def get_auth(self, force: bool = False, cache_headers: bool = True) -> Optional[Tuple[UUID, Headers]]:
+    @staticmethod
+    def get_cookies_path() -> str:
+        return os.path.join(os.getenv('LOCALAPPDATA'), R'Riot Games\Riot Client\Data\RiotClientPrivateSettings.yaml')
+
+    def get_cookies(self, force: bool = False) -> Optional[Cookies]:
+        if self.cookies_contents is not None and not force:
+            return self.cookies_contents
+        try:
+            with open(ValorantAPI.get_cookies_path()) as cookie_file:
+                cookies = yaml.safe_load(cookie_file)['private']['riot-login']['persist']['session']['cookies']
+                return cookies
+        except Exception as e:
+            logging.error(f'Could not get contents of cookie file: {str(e)}')
+            return None
+
+    def _build_header(self, bearer_token: str, entitlement_token: str):
+        return {
+            'Authorization': f"Bearer {bearer_token}",
+            'X-Riot-Entitlements-JWT': entitlement_token,
+            'X-Riot-ClientPlatform': ValorantAPI.CLIENT_PLATFORM,
+            'X-Riot-ClientVersion': self.get_current_version()
+        }
+
+    def _auth_with_cookies(self, force: bool, cache_headers: bool):
+        try:
+            cookies = self.get_cookies(force=force)
+            session = r.Session()
+
+            puuid: Optional[str] = None
+            for cookie in cookies:
+                if cookie['name'] == 'sub':
+                    puuid = cookie['value']
+                cookie_obj = create_cookie(cookie['name'], cookie['value'], domain=cookie['domain'],
+                                           path=cookie['path'],
+                                           secure=cookie['secureOnly'], rest={'HttpOnly': cookie['httpOnly']})
+                session.cookies.set_cookie(cookie_obj)
+
+            # Perform a reauth with stored cookies to get the entitlement token
+            # Token is hidden in the redirect URL
+            # https://github.com/techchrism/valorant-api-docs/blob/trunk/docs/Riot%20Auth/GET%20Cookie%20Reauth.md
+            redirect = session.get(ValorantAPI.REAUTH_URL, allow_redirects=False)
+            redirect_url: str = redirect.headers['Location']
+            bearer_token = dict(parse.parse_qsl(parse.urlsplit(redirect_url).fragment))["access_token"]
+
+            # Now get the entitlement token using the bearer token
+            # https://github.com/techchrism/valorant-api-docs/blob/trunk/docs/Riot%20Auth/POST%20Entitlement.md
+            response = session.post(ValorantAPI.ENTITLEMENTS_URL, headers={
+                'Authorization': f'Bearer {bearer_token}',
+                'Content-Type': 'application/json'
+            })
+            entitlements = response.json()
+            payload = self._build_header(bearer_token=bearer_token,
+                                         entitlement_token=entitlements['entitlements_token'])
+            if cache_headers:
+                self.cached_headers = payload
+            return puuid, payload
+        except Exception as e:
+            logging.error(f'Could not authenticate with cookies: {str(e)}')
+            return None, None
+
+    def _auth_with_lockfile(self, force: bool, cache_headers: bool) -> Optional[Tuple[UUID, Headers]]:
         try:
             lockfile = self.get_lockfile(force=force)
             headers = {
@@ -148,17 +218,21 @@ class ValorantAPI:
             response = r.get(f"https://127.0.0.1:{lockfile['port']}/entitlements/v1/token",
                              headers=headers, verify=False)
             entitlements = response.json()
-            payload = {
-                'Authorization': f"Bearer {entitlements['accessToken']}",
-                'X-Riot-Entitlements-JWT': entitlements['token'],
-                'X-Riot-ClientPlatform': ValorantAPI.CLIENT_PLATFORM,
-                'X-Riot-ClientVersion': self.get_current_version()
-            }
+            payload = self._build_header(bearer_token=entitlements['accessToken'],
+                                         entitlement_token=entitlements['token'])
             if cache_headers:
                 self.cached_headers = payload
             return entitlements['subject'], payload
-        except Exception:
+        except Exception as e:
+            logging.error(f'Could not authenticate with lockfile: {str(e)}')
             return None, None
+
+    def get_auth(self, force: bool = False, cache_headers: bool = True) -> Optional[Tuple[UUID, Headers]]:
+        # Try the cookies method first, then the lockfile method
+        puuid, headers = self._auth_with_cookies(force, cache_headers)
+        if puuid is None or headers is None:
+            return self._auth_with_lockfile(force, cache_headers)
+        return puuid, headers
 
     def get(self, url: str, params: Optional[Dict] = None, headers: Optional[Headers] = None) -> Dict:
         response = r.get(url, headers=self._fill_headers(headers), params=params)
@@ -198,7 +272,8 @@ class ValorantAPI:
         data = self.get_valorant_api('/v1/version')
         if data is None:
             return None
-        self.version = f"{data['branch']}-shipping-{data['buildVersion']}-{data['version'].split('.')[3]}"
+        # self.version = f"{data['branch']}-shipping-{data['buildVersion']}-{data['version'].split('.')[3]}"
+        self.version = data['riotClientVersion']
         return self.version
 
     def get_weapons(self) -> Optional[Dict]:
