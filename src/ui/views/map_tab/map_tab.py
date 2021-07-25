@@ -9,7 +9,7 @@ from src.models.models import PlayerData
 from .map_view import MapCanvas
 from .map_list_view import MapListView
 from .map_filters_view import MapFiltersView
-from .map_analytics_view import MapAnalyticsView
+from .map_queue_type_view import MapQueueTypeView
 
 
 class MapTab(QWidget):
@@ -28,12 +28,12 @@ class MapTab(QWidget):
 
         self.map_list_view: MapListView = MapListView(self)
         self.map_filters_view: MapFiltersView = MapFiltersView(self)
-        self.map_analytics_view: MapAnalyticsView = MapAnalyticsView(self)
+        self.map_queue_type_view: MapQueueTypeView = MapQueueTypeView(self)
         self.map_canvas = MapCanvas(self)
 
         container.addWidget(self.map_list_view, 0, 0, 2, 1)
         container.addWidget(self.map_filters_view, 0, 1, 1, 1)
-        container.addWidget(self.map_analytics_view, 0, 2, 1, 1)
+        container.addWidget(self.map_queue_type_view, 0, 2, 1, 1)
         container.addWidget(self.map_canvas.graphics_view, 1, 1, 1, 2)
 
         container.setRowStretch(0, 1)

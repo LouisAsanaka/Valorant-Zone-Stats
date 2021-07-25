@@ -30,6 +30,12 @@ class MatchRowView(QFrame):
         self.score_label.setText(f'{match.my_match_score} - {match.opponent_match_score}')
         self.hbox.addWidget(self.score_label)
 
+        self.queue_label: QLabel = QLabel()
+        self.queue_label.setAlignment(Qt.AlignCenter)
+        self.queue_label.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        self.queue_label.setText(match.queue)
+        self.hbox.addWidget(self.queue_label)
+
 
 class GeneralTab(QWidget):
 

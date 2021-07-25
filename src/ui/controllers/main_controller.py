@@ -11,7 +11,7 @@ from src.ui.controllers.general_tab.general_controller import GeneralController
 from src.ui.controllers.map_tab.map_controller import MapController
 from src.ui.controllers.map_tab.map_list_controller import MapListController
 from src.ui.controllers.map_tab.map_filters_controller import MapFiltersController
-from src.ui.controllers.map_tab.map_analytics_controller import MapAnalyticsController
+from src.ui.controllers.map_tab.map_queue_type_controller import MapQueueTypeController
 
 
 class AnalyzeMatchesWorker(QObject):
@@ -87,12 +87,14 @@ class MainController(QObject):
         self.map_filters_controller.player_side_changed.connect(self.draw_stats)
 
     def _init_map_analytics_controller(self):
-        self.map_analytics_controller: MapAnalyticsController = MapAnalyticsController(
-            self.main_view.map_tab.map_analytics_view)
+        self.map_queue_type_controller: MapQueueTypeController = MapQueueTypeController(
+            self.main_view.map_tab.map_queue_type_view)
 
     def _init_services(self):
         self.api_service: ApiService = ApiService(self.settings.value('region', ApiService.get_regions()[0]))
+
         self.match_service: MatchService = MatchService(self.api_service)
+        self.main_view.close_event_signal.connect(self.match_service.on_close)
 
         self.map_service: MapService = MapService()
         self.map_service.load_maps()
@@ -111,7 +113,7 @@ class MainController(QObject):
             self.map_controller.store_map_stats(
                 self.map_service.get_map(current_map_id), *stats
             )
-            self.map_analytics_controller.show_analytics(self.analytics_service.get_map_analytics(current_map_id))
+            self.map_queue_type_controller.show_analytics(self.analytics_service.get_map_analytics(current_map_id))
         else:
             self.map_controller.store_map_stats(self.map_service.get_map(current_map_id), None, None)
 

@@ -30,7 +30,9 @@ Extract it to anywhere you would like, then run
 `valorant-zone-stats.exe`. 
 
 **Warning**: A file named `matches.db` will be created alongside the exe. Please do not touch the file! It is used to
-store your past matches for analysis, as Riot does not provide all past matches.
+store your past matches for analysis, as Riot does not provide all past matches. `storage.json` and `settings.ini` can 
+be deleted. The former keeps track of matches the program should ignore (e.g. deathmatch) to reduce loading time, and
+the latter stores your region setting.
   
 ## Usage
 Make sure the program is running on a computer where you are logged into VALORANT. Click on the "Fetch User" button, 

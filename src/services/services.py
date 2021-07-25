@@ -11,7 +11,6 @@ from peewee import Model, Metadata, SqliteDatabase, FixedCharField, CharField, D
 from playhouse.shortcuts import model_to_dict
 
 import logging
-# logging.basicConfig(level=logging.INFO)
 
 from src.api.api import ValorantAPI, ValorantConstants
 from src.utils import get_executable_relative_path
@@ -26,6 +25,8 @@ KillPositionsTemplate = []
 
 
 class ApiService:
+
+    QueueTypes = ('competitive', 'unrated', 'custom')
 
     def __init__(self, region):
         self.api = ValorantAPI(region=region)
@@ -125,17 +126,34 @@ class MatchService:
         db.connect()
         db.create_tables([MatchModel])
 
+        try:
+            with open(get_executable_relative_path('storage.json'), 'r') as f:
+                self.ignored_match_ids: Dict = json.loads(f.read())
+        except Exception as e:
+            logging.error(f'Could not load storage.json: {str(e)}')
+            self.ignored_match_ids = {}
+
     def _opposing_team(self, my_team: str) -> str:
         if my_team == ValorantConstants.Team.Blue.value:
             return ValorantConstants.Team.Red.value
         return ValorantConstants.Team.Blue.value
 
-    def _get_queue_from_provisioning_flow_id(self, pfid: str) -> str:
-        return ValorantConstants.ProvisioningFlowIDs.get(pfid, '')
+    def _get_queue(self, pfid: str, queue_id: str) -> str:
+        if pfid == 'Matchmaking':
+            return queue_id
+        elif pfid == 'CustomGame':
+            return 'custom'
 
-    def _get_all_stored_match_ids(self, puuid: str, queue: str):
-        query = MatchModel.select(MatchModel.match_id).where(MatchModel.puuid == puuid, MatchModel.queue == queue)\
-            .order_by(MatchModel.match_date.desc())
+    def _get_all_stored_match_ids(self, puuid: str, queue: Optional[str] = None):
+        if queue is None:
+            query = MatchModel.select(MatchModel.match_id) \
+                .where(MatchModel.puuid == puuid) \
+                .order_by(MatchModel.match_date.desc())
+        else:
+            query = MatchModel.select(MatchModel.match_id) \
+                .where(MatchModel.puuid == puuid, MatchModel.queue == queue) \
+                .order_by(MatchModel.match_date.desc())
+
         hashmap = {}
         for match in query:
             hashmap[match.match_id] = True
@@ -159,7 +177,8 @@ class MatchService:
             my_deaths: int = player_info['stats']['deaths']
             my_assists: int = player_info['stats']['assists']
             my_score: int = player_info['stats']['score']
-            queue: str = self._get_queue_from_provisioning_flow_id(match_info['matchInfo']['provisioningFlowID'])
+            queue: str = self._get_queue(match_info['matchInfo']['provisioningFlowID'],
+                                         match_info['matchInfo']['queueID'])
 
             logging.debug(f'({my_match_score} - {opponent_match_score}), {my_kills}/{my_deaths}/{my_assists}')
 
@@ -173,29 +192,44 @@ class MatchService:
             logging.debug('Malformed match info.')
             return None
 
-    def store_new_matches(self, puuid: str, queue: Optional[str] = 'competitive'):
+    def store_new_matches(self, puuid: str):
         all_matches: List[Match] = []
         try:
-            online_match_history = self.api_service.get_all_match_history(puuid, queue=queue)
-            stored_match_history = self._get_all_stored_match_ids(puuid, queue=queue)
+            stored_match_history: Dict = self._get_all_stored_match_ids(puuid)
+
+            online_match_history = []
+            expected_total: int = 0
+            for queue in ApiService.QueueTypes:
+                result: Dict = self.api_service.get_all_match_history(puuid, queue=queue)
+                online_match_history.extend(result['History'])
+                expected_total += result['Total']
+
+            logging.debug(
+                f'Found {len(online_match_history)} matches (expected {expected_total}) to process...')
 
             # First fetch the games already in the database
             for match_id in stored_match_history:
                 stored_model = MatchModel.select().where(MatchModel.match_id == match_id).get()
                 all_matches.append(Match(match_model=model_to_dict(stored_model)))
 
-            logging.debug(f'Found {len(online_match_history["History"])} matches (expected {online_match_history["Total"]}) to process...')
+            # Sort the match IDs by descending date before storing into the database
+            online_match_history.sort(key=lambda m: datetime.fromtimestamp(m['GameStartTime'] / 1000, tz=timezone.utc),
+                                      reverse=True)
 
             # Then fetch, store, and append the new matches
-            for match in online_match_history['History']:
+            for match in online_match_history:
                 match_id = match['MatchID']
-                if match_id not in stored_match_history:
+                if match_id not in stored_match_history and match_id not in self.ignored_match_ids:
                     logging.debug(f'Match with ID {match_id} not found, storing...')
                     match_info = self.api_service.get_match_info(match_id)
-                    all_matches.append(Match(match_model=self._store_match(match_info, puuid)))
+                    # Only add 5v5s, no other custom gamemode
+                    if match_info['matchInfo']['gameMode'] == '/Game/GameModes/Bomb/BombGameMode.BombGameMode_C':
+                        all_matches.append(Match(match_model=self._store_match(match_info, puuid)))
+                    else:
+                        self.ignored_match_ids[match_id] = True
             all_matches.sort(key=lambda m: m.date, reverse=True)
         except RuntimeWarning:  # not authenticated, use local matches
-            query = MatchModel.select().where(MatchModel.queue == queue).order_by(MatchModel.match_date.desc())
+            query = MatchModel.select().order_by(MatchModel.match_date.desc())
             for match in query:
                 all_matches.append(Match(match_model=model_to_dict(match)))
         return all_matches
@@ -298,6 +332,11 @@ class MatchService:
             stats[zone.name][stat_key] += 1
             kill_positions[zone.name].append(positional_info)
         return stats, kill_positions
+
+    def on_close(self):
+        db.close()
+        with open(get_executable_relative_path('storage.json'), 'w') as f:
+            f.write(json.dumps(self.ignored_match_ids))
 
 
 class MapService:

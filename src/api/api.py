@@ -35,11 +35,6 @@ class ValorantConstants:
         'newmap': 'Breeze'
     }
 
-    ProvisioningFlowIDs = {
-        'Matchmaking': 'competitive',
-        'CustomGame': 'custom'
-    }
-
     Agents = {
         '5f8d3a7f-467b-97f3-062c-13acf203c006': 'Breach',
         'f94c3b30-42be-e959-889c-5aa313dba261': 'Raze',

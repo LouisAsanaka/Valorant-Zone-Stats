@@ -215,3 +215,4 @@ fabric.properties
 matches/
 **/matches.db
 settings.ini
+storage.json
