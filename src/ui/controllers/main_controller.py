@@ -55,7 +55,7 @@ class MainController(QObject):
 
     def _init_settings(self):
         if not self.settings.contains('region'):
-            self.settings.setValue('region', 'NA')
+            self.settings.setValue('region', ApiService.get_regions()[0])
 
     def _init_controllers(self):
         self._init_general_controller()
@@ -91,7 +91,7 @@ class MainController(QObject):
             self.main_view.map_tab.map_analytics_view)
 
     def _init_services(self):
-        self.api_service: ApiService = ApiService(self.settings.value('region', 'NA'))
+        self.api_service: ApiService = ApiService(self.settings.value('region', ApiService.get_regions()[0]))
         self.match_service: MatchService = MatchService(self.api_service)
 
         self.map_service: MapService = MapService()

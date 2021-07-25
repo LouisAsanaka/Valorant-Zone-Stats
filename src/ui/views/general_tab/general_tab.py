@@ -5,6 +5,7 @@ from PySide2.QtCore import *
 from typing import Optional, List
 
 from src.models.models import Match, PlayerData
+from src.ui.widgets.widgets import QHLine
 
 
 class MatchRowView(QFrame):
@@ -68,7 +69,6 @@ class GeneralTab(QWidget):
         top_box.addWidget(self.fetch_matches_button)
 
         self.region_combo_box: QComboBox = QComboBox()
-        self.region_combo_box.addItems(['NA', 'AP', 'EU', 'KO'])
         top_box.addWidget(self.region_combo_box)
 
         container.addLayout(top_box)

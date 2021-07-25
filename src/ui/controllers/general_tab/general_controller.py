@@ -3,7 +3,7 @@ from PySide2.QtWidgets import *
 
 from pprint import pprint
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 import threading
 from threading import Thread
 
@@ -56,7 +56,12 @@ class GeneralController(QObject):
         self.view.fetch_user_button.pressed.connect(self.on_fetch_user_pressed)
         self.view.fetch_matches_button.pressed.connect(self.on_fetch_matches_pressed)
 
-        index: int = self.view.region_combo_box.findText(self.settings.value('region', 'NA'))
+        self.init_region_list()
+
+    def init_region_list(self):
+        regions: Tuple[str] = self.api_service.get_regions()
+        self.view.region_combo_box.addItems(regions)
+        index: int = self.view.region_combo_box.findText(self.settings.value('region', regions[0]))
         if index != -1:
             self.view.region_combo_box.setCurrentIndex(index)
         self.view.region_combo_box.currentIndexChanged.connect(self.on_region_changed)

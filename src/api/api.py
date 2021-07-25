@@ -128,7 +128,7 @@ class ValorantAPI:
         return headers
 
     def set_region(self, region: str):
-        if region.upper() in self.Regions:
+        if region.upper() in ValorantAPI.Regions:
             self.region = region
 
     @staticmethod

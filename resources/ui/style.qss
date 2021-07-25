@@ -89,3 +89,22 @@ QLabel#matchesUsedLabel {
     color: white;
     font-size: 18px;
 }
+
+QComboBox {
+    background-color: #33373B;
+    border: 1px solid white;
+    border-radius: 2px;
+    padding: 6px;
+    color: white;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #33373B;
+    border: 2px solid white;
+    color: white;
+    outline: none; /* removes the ugly dotted selection indicator */
+}
+
+QHLine {
+    color: white;
+}

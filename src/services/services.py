@@ -32,6 +32,10 @@ class ApiService:
         self.puuid: Optional[str] = None
         self.is_authed: bool = False
 
+    @staticmethod
+    def get_regions() -> Tuple[str]:
+        return ValorantAPI.Regions
+
     def set_region(self, region: str):
         self.api.set_region(region)
 
@@ -114,9 +118,9 @@ class MatchService:
 
     def __init__(self, api_service: ApiService):
         self.api_service: ApiService = api_service
-        # TODO: Make sure directories don't get messed up after PyInstaller
-        print(os.getcwd())
-        print(sys.executable)
+
+        logging.debug(f'Current working directory: {os.getcwd()}')
+        logging.debug(f'Executable directory: {sys.executable}')
         db.init(get_executable_relative_path('matches.db'))
         db.connect()
         db.create_tables([MatchModel])
