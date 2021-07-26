@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Tuple, Any
 from peewee import Model, Metadata, SqliteDatabase, FixedCharField, CharField, DateTimeField, IntegerField
 from playhouse.shortcuts import model_to_dict
+from playhouse.migrate import SqliteMigrator, migrate
 
 import logging
 
@@ -19,6 +20,37 @@ from src.models.models import Match, GameMap
 
 
 db = SqliteDatabase(None, pragmas=(('cache_size', -1024 * 64), ('journal_mode', 'wal')))
+
+
+def execute_migrations():
+    migrator = SqliteMigrator(db)
+
+    columns = {}
+    for column in db.get_columns('matchmodel'):
+        columns[column.name] = True
+
+    migrations = []
+
+    if 'queue' not in columns:
+        logging.debug('Column "queue" does not exist! Migrating...')
+        queue_field = CharField(default='competitive')
+        migrations.append(migrator.add_column('matchmodel', 'queue', queue_field))
+
+    if 'map_id' not in columns:
+        logging.debug('Column "map_id" does not exist! Migrating...')
+        map_id_field = CharField(default='')
+        migrations.append(migrator.add_column('matchmodel', 'map_id', map_id_field))
+
+    if 'stats' not in columns:
+        logging.debug('Column "stats" does not exist! Migrating...')
+        stats_field = CharField(default=None, null=True)
+        migrations.append(migrator.add_column('matchmodel', 'stats', stats_field))
+
+    if migrations:
+        logging.debug(f'Performing {len(migrations)} migrations...')
+        migrate(*migrations)
+    else:
+        logging.debug(f'No migrations needed.')
 
 
 class ThreadSafeDatabaseMetadata(Metadata):
@@ -72,6 +104,7 @@ class MatchService:
         db.init(get_executable_relative_path('matches.db'))
         db.connect()
         db.create_tables([MatchModel])
+        execute_migrations()
 
         try:
             with open(get_executable_relative_path('storage.json'), 'r') as f:
@@ -172,17 +205,17 @@ class MatchService:
                 modified: bool = False
                 if match.map_id is None or match.map_id == '':
                     logging.debug(f'No map ID found for match {match_id}!')
-                    stored_model.map_id = match.map_id = match.match_info['matchInfo']['mapId']
+                    stored_model.map_id = match.map_id = match.get_map_id()
                     logging.debug(f"Set map_id to {match.map_id}")
                     modified = True
                 if match.stats is None:  # Stats have not been calculated for this match, do so now
                     logging.debug(f'No stats found for match {match_id}!')
                     match.stats = self.analyze(match, self.map_service.get_map(match.map_id), puuid)
-                    match.unload_match_info()
                     stored_model.stats = json.dumps(match.stats)
                     modified = True
                 if modified:
                     stored_model.save()
+                match.unload_match_info()
 
             # Sort the match IDs by descending date before storing into the database
             online_match_history.sort(key=lambda m: datetime.fromtimestamp(m['GameStartTime'] / 1000, tz=timezone.utc),

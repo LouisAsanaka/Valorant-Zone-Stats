@@ -3,7 +3,7 @@ from PySide2.QtCore import QObject, Signal
 from datetime import datetime
 import json
 import math
-from typing import Iterator, Tuple, Dict, List, Optional
+from typing import Iterator, Tuple, Dict, List, Optional, Union
 import logging
 
 from shapely.geometry import Point, Polygon
@@ -99,7 +99,7 @@ class Match:
         self.my_deaths: int = match_model['my_deaths']
         self.my_assists: int = match_model['my_assists']
         self.my_score: int = match_model['my_score']
-        self.match_info: Optional[Dict] = json.loads(match_model['raw_json'])
+        self.match_info: Optional[Union[str, Dict]] = match_model['raw_json']
         self.queue: str = match_model['queue']
         self.stats: Optional[Dict] = None if match_model['stats'] is None else json.loads(match_model['stats'])
         self.map_id: str = match_model['map_id']
@@ -119,9 +119,16 @@ class Match:
         return self.my_team
 
     def get_kills(self) -> Optional[List[Dict]]:
-        if self.match_info is None:
-            return None
+        if isinstance(self.match_info, str):
+            self.match_info = json.loads(self.match_info)
         return self.match_info['kills']
+
+    def get_map_id(self) -> str:
+        if self.map_id == '':
+            if isinstance(self.match_info, str):
+                self.match_info = json.loads(self.match_info)
+            return self.match_info['matchInfo']['mapId']
+        return self.map_id
 
     def unload_match_info(self):
         """
