@@ -123,8 +123,6 @@ class ValorantAPI:
         self.shard: str = self.set_shard(region.upper())
         self.cached_headers: Optional[ValorantAPI.Headers] = None
 
-        self.set_shard(region.upper())
-
     def _fill_headers(self, headers: Optional[Headers]):
         if headers is None:
             if self.cached_headers is None:
@@ -135,15 +133,16 @@ class ValorantAPI:
 
     def set_region(self, region: str):
         if region.upper() in ValorantAPI.Regions:
+            if region.upper() in ValorantAPI.Region_Overrides.keys():
+                return ValorantAPI.Region_Overrides[region]
             return region
-        if region.upper() in ValorantAPI.Region_Overrides.keys():
-            return ValorantAPI.Region_Overrides[region]
         
     def set_shard(self, region: str):
-        if region in ValorantAPI.Shard_Overrides.keys():
-            return ValorantAPI.Shard_Overrides[region]
-        else:
-            return region
+        if region.upper() in ValorantAPI.Regions:
+            if region in ValorantAPI.Shard_Overrides.keys():
+                return ValorantAPI.Shard_Overrides[region]
+            else:
+                return region
 
     @staticmethod
     def get_lockfile_path() -> str:

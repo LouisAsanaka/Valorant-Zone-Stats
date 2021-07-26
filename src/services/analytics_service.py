@@ -94,6 +94,7 @@ class AnalyticsService:
                             }
             for match in matches:
                 self.statistics[match.map_id][match.queue]['matches'] += 1
+                print(self.statistics[match.map_id][match.queue][side]['zones'])
                 for side in ['attacker', 'defender']:
                     for zone in self.map_service.get_map(match.map_id).get_zones():
                         zone_stats = match.stats[side]['zones'][zone]
