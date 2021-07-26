@@ -15,5 +15,5 @@ del "Qt5QmlModels.dll"
 del "Qt5DBus.dll"
 del "Qt5Svg.dll"
 del "Qt5WebSockets.dll"
-
+cd ..\..
 REM pyinstaller --name "valorant-zone-stats" --icon resources/ui/favicon.ico --noconfirm valorant-zone-stats.spec
