@@ -16,7 +16,9 @@ class ApiService:
         return ValorantAPI.Regions
 
     def set_region(self, region: str):
-        self.api.set_region(region)
+        self.region = self.api.set_region(region.upper())
+        self.shard = self.api.set_shard(region.upper())
+    
 
     def try_auth(self) -> bool:
         self.puuid, _ = self.api.get_auth(force=True, cache_headers=True)

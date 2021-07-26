@@ -102,7 +102,14 @@ class ValorantAPI:
     Cookies = List[Dict]
     Headers = Dict[str, str]
 
-    Regions = ('NA', 'EU', 'AP', 'KO')
+    Regions = ('NA', 'EU', 'AP', 'KR', 'LATAM', 'BR', 'PBE')
+    Shard_Overrides = {
+        'LATAM': 'NA',
+        'BR': 'NA',
+    }
+    Region_Overrides = {
+        'PBE': 'NA',
+    }
     CLIENT_PLATFORM = 'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9'
 
     REAUTH_URL: str = 'https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in&client_id=play-valorant-web-prod&response_type=token%20id_token'
@@ -112,8 +119,11 @@ class ValorantAPI:
         self.version: Optional[str] = None
         self.lockfile_contents: Optional[Dict[str, str]] = None
         self.cookies_contents: Optional[ValorantAPI.Cookies] = None
-        self.region: str = region.upper()
+        self.region: str = self.set_region(region.upper())
+        self.shard: str = self.set_shard(region.upper())
         self.cached_headers: Optional[ValorantAPI.Headers] = None
+
+        self.set_shard(region.upper())
 
     def _fill_headers(self, headers: Optional[Headers]):
         if headers is None:
@@ -125,7 +135,15 @@ class ValorantAPI:
 
     def set_region(self, region: str):
         if region.upper() in ValorantAPI.Regions:
-            self.region = region
+            return region
+        if region.upper() in ValorantAPI.Region_Overrides.keys():
+            return ValorantAPI.Region_Overrides[region]
+        
+    def set_shard(self, region: str):
+        if region in ValorantAPI.Shard_Overrides.keys():
+            return ValorantAPI.Shard_Overrides[region]
+        else:
+            return region
 
     @staticmethod
     def get_lockfile_path() -> str:
@@ -239,27 +257,27 @@ class ValorantAPI:
         return json.loads(response.text)
 
     def get_pd(self, endpoint: str, params: Optional[Dict] = None, headers: Optional[Headers] = None) -> Dict:
-        return self.get(f'https://pd.{self.region}.a.pvp.net{endpoint}', params, headers)
+        return self.get(f'https://pd.{self.shard}.a.pvp.net{endpoint}', params, headers)
 
     def get_glz(self, endpoint: str, params: Optional[Dict] = None, headers: Optional[Headers] = None) -> Dict:
-        return self.get(f'https://glz-{self.region}-1.{self.region}.a.pvp.net{endpoint}', params, headers)
+        return self.get(f'https://glz-{self.region}-1.{self.shard}.a.pvp.net{endpoint}', params, headers)
 
     def post(self, url: str, data: Optional[Dict] = None, headers: Optional[Headers] = None) -> Dict:
         response = r.post(url, headers=self._fill_headers(headers), data=data)
         return json.loads(response.text)
 
     def post_pd(self, endpoint: str, data: Optional[Dict] = None, headers: Optional[Headers] = None) -> Dict:
-        return self.post(f'https://pd.{self.region}.a.pvp.net{endpoint}', data, headers)
+        return self.post(f'https://pd.{self.shard}.a.pvp.net{endpoint}', data, headers)
 
     def post_glz(self, endpoint: str, data: Optional[Dict] = None, headers: Optional[Headers] = None) -> Dict:
-        return self.post(f'https://glz-{self.region}-1.{self.region}.a.pvp.net{endpoint}', data, headers)
+        return self.post(f'https://glz-{self.region}-1.{self.shard}.a.pvp.net{endpoint}', data, headers)
 
     def put(self, url: str, data: Optional[Union[Dict, str]] = None, headers: Optional[Headers] = None) -> Dict:
         response = r.put(url, headers=self._fill_headers(headers), data=data)
         return json.loads(response.text)
 
     def put_pd(self, endpoint: str, data: Optional[Union[Dict, str]] = None, headers: Optional[Headers] = None) -> Dict:
-        return self.put(f'https://pd.{self.region}.a.pvp.net{endpoint}', headers=headers, data=data)
+        return self.put(f'https://pd.{self.shard}.a.pvp.net{endpoint}', headers=headers, data=data)
 
     @staticmethod
     def get_valorant_api(endpoint: str) -> Optional[Dict]:
