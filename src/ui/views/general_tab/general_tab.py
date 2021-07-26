@@ -5,7 +5,6 @@ from PySide2.QtCore import *
 from typing import Optional, List
 
 from src.models.models import Match, PlayerData
-from src.ui.widgets.widgets import QHLine
 
 
 class MatchRowView(QFrame):
@@ -79,6 +78,16 @@ class GeneralTab(QWidget):
 
         container.addLayout(top_box)
 
+        bottom_box: QHBoxLayout = QHBoxLayout()
+
+        self.progress_bar: QProgressBar = QProgressBar(self)
+        self.progress_bar.setOrientation(Qt.Vertical)
+        self.progress_bar.setInvertedAppearance(True)
+        self.progress_bar.setAlignment(Qt.AlignCenter)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        bottom_box.addWidget(self.progress_bar)
+
         self.match_list_scroll_area = QScrollArea()
         self.match_list_scroll_area.setWidgetResizable(True)
 
@@ -92,7 +101,9 @@ class GeneralTab(QWidget):
         self.match_list_scroll_area.setWidget(inner)
         self.match_rows: List[MatchRowView] = []
 
-        container.addWidget(self.match_list_scroll_area)
+        bottom_box.addWidget(self.match_list_scroll_area)
+
+        container.addLayout(bottom_box)
 
     @Slot(str)
     def on_username_changed(self, name: str):

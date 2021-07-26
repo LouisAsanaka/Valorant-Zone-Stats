@@ -5,7 +5,7 @@ import json
 import threading
 from pprint import pprint
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Tuple, Any
+from typing import List, Optional, Dict, Tuple, Callable
 from peewee import Model, Metadata, SqliteDatabase, FixedCharField, CharField, DateTimeField, IntegerField
 from playhouse.shortcuts import model_to_dict
 from playhouse.migrate import SqliteMigrator, migrate
@@ -111,6 +111,7 @@ class MatchService:
                 self.ignored_match_ids: Dict = json.loads(f.read())
         except Exception as e:
             logging.error(f'Could not load storage.json: {str(e)}')
+            logging.error(traceback.format_exc())
             self.ignored_match_ids = {}
 
     def _opposing_team(self, my_team: str) -> str:
@@ -171,12 +172,14 @@ class MatchService:
             return model
         except KeyError as e:
             logging.error(f'Malformed match info: {str(e)}')
+            logging.error(traceback.format_exc())
             return None
 
-    def process_matches(self, puuid: str):
+    def process_matches(self, puuid: str, progress_callback: Optional[Callable[[float], None]] = None):
         """
         Fetch new matches, load old matches, and analyze the games.
-        :param puuid:
+        :param puuid: the player to fetch the matches for
+        :param progress_callback: optional callback with progress values (0 to 1)
         :return:
         """
         all_matches: List[Match] = []
@@ -194,6 +197,13 @@ class MatchService:
 
             logging.debug(
                 f'Found {len(online_match_history)} matches (expected {expected_total}) to process...')
+
+            total_matches: int = len(stored_match_history) + len(online_match_history)
+            matches_processed: int = 0
+
+            if total_matches == 0:
+                progress_callback(1.0)
+                return []
 
             # First fetch the matches already in the database
             for match_id in stored_match_history:
@@ -216,6 +226,9 @@ class MatchService:
                 if modified:
                     stored_model.save()
                 match.unload_match_info()
+
+                matches_processed += 1
+                progress_callback(matches_processed / total_matches)
 
             # Sort the match IDs by descending date before storing into the database
             online_match_history.sort(key=lambda m: datetime.fromtimestamp(m['GameStartTime'] / 1000, tz=timezone.utc),
@@ -241,6 +254,10 @@ class MatchService:
                         all_matches.append(match)
                     else:
                         self.ignored_match_ids[match_id] = True
+
+                matches_processed += 1
+                progress_callback(matches_processed / total_matches)
+
             all_matches.sort(key=lambda m: m.date, reverse=True)
         except Exception as e:  # not authenticated, use local matches
             logging.error(f'Exception during match processing: {str(e)}')

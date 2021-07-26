@@ -34,7 +34,7 @@ class ProcessMatchWorker(QObject):
     def run(self):
         logging.debug(f'Running on {threading.current_thread().name}')
         logging.debug(f'Fetching matches for {self.puuid}...')
-        result = self.match_service.process_matches(self.puuid)
+        result = self.match_service.process_matches(self.puuid, lambda x: self.progress.emit(x))
         self.result.emit(result)
         self.finished.emit()
 
@@ -86,10 +86,16 @@ class GeneralController(QObject):
             self.view.fetch_matches_button.setDisabled(False)
 
         self.worker = ProcessMatchWorker(self.match_service, self.api_service.puuid)
+        self.worker.progress.connect(self.on_processing_progress_updated)
         self.worker.result.connect(self.player_data.set_available_matches)
         self.worker.finished.connect(on_finish)
         self.worker.start()
+        self.view.progress_bar.setValue(0)
         self.view.fetch_matches_button.setDisabled(True)
+
+    @Slot(float)
+    def on_processing_progress_updated(self, progress: float):
+        self.view.progress_bar.setValue(int(progress * 100))
 
     @Slot(int)
     def on_region_changed(self, index: int):

@@ -2,6 +2,7 @@ import requests as r
 from urllib import parse
 from pprint import pprint
 from requests.cookies import create_cookie
+import traceback
 import os
 import base64
 from typing import Optional, Dict, Tuple, Union, List
@@ -141,6 +142,7 @@ class ValorantAPI:
                 return self.lockfile_contents
         except Exception as e:
             logging.error(f'Could not get contents of lockfile: {str(e)}')
+            logging.error(traceback.format_exc())
             return None
 
     @staticmethod
@@ -156,6 +158,7 @@ class ValorantAPI:
                 return cookies
         except Exception as e:
             logging.error(f'Could not get contents of cookie file: {str(e)}')
+            logging.error(traceback.format_exc())
             return None
 
     def _build_header(self, bearer_token: str, entitlement_token: str):
@@ -201,6 +204,7 @@ class ValorantAPI:
             return puuid, payload
         except Exception as e:
             logging.error(f'Could not authenticate with cookies: {str(e)}')
+            logging.error(traceback.format_exc())
             return None, None
 
     def _auth_with_lockfile(self, force: bool, cache_headers: bool) -> Optional[Tuple[UUID, Headers]]:
@@ -220,6 +224,7 @@ class ValorantAPI:
             return entitlements['subject'], payload
         except Exception as e:
             logging.error(f'Could not authenticate with lockfile: {str(e)}')
+            logging.error(traceback.format_exc())
             return None, None
 
     def get_auth(self, force: bool = False, cache_headers: bool = True) -> Optional[Tuple[UUID, Headers]]:
