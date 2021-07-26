@@ -216,3 +216,4 @@ matches/
 **/matches.db
 settings.ini
 storage.json
+*.db.bak

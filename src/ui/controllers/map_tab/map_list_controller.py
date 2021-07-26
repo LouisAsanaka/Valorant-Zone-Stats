@@ -2,7 +2,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 
-from src.services.services import MapService
+from src.services.map_service import MapService
 from src.ui.views.map_tab.map_list_view import MapListView, MapRowView
 
 

@@ -6,7 +6,6 @@ from PySide2.QtGui import *
 from PySide2.QtCore import *
 
 from src.models.models import GameMap, MapZone
-from src.services.services import ZoneKillPositions
 
 
 # Source: https://stackoverflow.com/a/29026916
@@ -223,21 +222,21 @@ class MapCanvas(QObject):
             self.scene.removeItem(item)
         self.kill_position_items = []
 
-    def draw_kills(self, kill_positions: ZoneKillPositions):
-        for info in kill_positions:
+    def draw_kills(self, events: List[Dict]):
+        for event in events:
             items = None
 
-            if 'killer_pos' not in info or info['killer_pos'] is None:
+            if 'k' not in event or event['k'] is None:
                 continue
-            killer_x, killer_y = info['killer_pos']['x'], info['killer_pos']['y']
-            victim_x, victim_y = info['victim_pos']['x'], info['victim_pos']['y']
-            if info['role'] == 'killer':
+            killer_x, killer_y = event['k']
+            victim_x, victim_y = event['v']
+            if event['r'] == 'k':
                 items = [
                     self.draw_point(killer_x, killer_y, QPen(Qt.green, 2), QBrush(Qt.green, Qt.SolidPattern)),
                     self.draw_point(victim_x, victim_y, QPen(Qt.green, 1), QBrush(Qt.transparent, Qt.SolidPattern)),
                     self.draw_line(killer_x, killer_y, victim_x, victim_y, QPen(Qt.lightGray, 1))
                 ]
-            elif info['role'] == 'victim':
+            elif event['r'] == 'v':
                 items = [
                     self.draw_point(killer_x, killer_y, QPen(Qt.red, 1), QBrush(Qt.transparent, Qt.SolidPattern)),
                     self.draw_point(victim_x, victim_y, QPen(Qt.red, 2), QBrush(Qt.red, Qt.SolidPattern)),

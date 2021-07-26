@@ -101,6 +101,8 @@ class Match:
         self.my_score: int = match_model['my_score']
         self.match_info: Optional[Dict] = json.loads(match_model['raw_json'])
         self.queue: str = match_model['queue']
+        self.stats: Optional[Dict] = None if match_model['stats'] is None else json.loads(match_model['stats'])
+        self.map_id: str = match_model['map_id']
 
     # @staticmethod
     # def load_match_from_file(file_path: Union[str, Path]):

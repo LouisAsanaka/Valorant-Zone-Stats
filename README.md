@@ -91,7 +91,7 @@ activate the virtualenv first!
 - [ ] Improve match list and add statistics for each match
 - [ ] Improve color coding for the maps (current it is green if K/D >= 1.0, red otherwise)
 - [ ] Potentially remake the map zones
-- [ ] Analyze other types of matches (unrated & customs) instead of only competitive
+- [x] Analyze other types of matches (unrated & customs) instead of only competitive
 - [x] Offline mode (without needing VALORANT to be running)
 
 ## How?

@@ -7,7 +7,8 @@ from typing import Optional, Tuple
 import threading
 from threading import Thread
 
-from src.services.services import ApiService, MatchService
+from src.services.api_service import ApiService
+from src.services.match_service import MatchService
 from src.models.models import PlayerData
 from src.ui.views.general_tab.general_tab import GeneralTab
 
@@ -15,7 +16,7 @@ from src.ui.views.general_tab.general_tab import GeneralTab
 # h = hpy()
 
 
-class FetchMatchWorker(QObject):
+class ProcessMatchWorker(QObject):
     progress: SignalInstance = Signal(float)
     result: SignalInstance = Signal(dict)
     finished: SignalInstance = Signal()
@@ -33,14 +34,14 @@ class FetchMatchWorker(QObject):
     def run(self):
         logging.debug(f'Running on {threading.current_thread().name}')
         logging.debug(f'Fetching matches for {self.puuid}...')
-        result = self.match_service.store_new_matches(self.puuid)
+        result = self.match_service.process_matches(self.puuid)
         self.result.emit(result)
         self.finished.emit()
 
 
 class GeneralController(QObject):
 
-    matches_fetched: SignalInstance = Signal()
+    matches_processed: SignalInstance = Signal()
     region_changed: SignalInstance = Signal(str)
 
     def __init__(self, general_view: GeneralTab, player_data: PlayerData, api_service: ApiService,
@@ -81,10 +82,10 @@ class GeneralController(QObject):
             # logging.info(f'Running on {threading.current_thread().name}')
             self.worker.thread.join()
             self.worker.deleteLater()
-            self.matches_fetched.emit()
+            self.matches_processed.emit()
             self.view.fetch_matches_button.setDisabled(False)
 
-        self.worker = FetchMatchWorker(self.match_service, self.api_service.puuid)
+        self.worker = ProcessMatchWorker(self.match_service, self.api_service.puuid)
         self.worker.result.connect(self.player_data.set_available_matches)
         self.worker.finished.connect(on_finish)
         self.worker.start()
