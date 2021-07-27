@@ -119,6 +119,11 @@ class Match:
     def get_player_team(self) -> str:
         return self.my_team
 
+    def get_rounds(self) -> Optional[List[Dict]]:
+        if isinstance(self.match_info, str):
+            self.match_info = json.loads(self.match_info)
+        return self.match_info['roundResults']
+
     def get_kills(self) -> Optional[List[Dict]]:
         if isinstance(self.match_info, str):
             self.match_info = json.loads(self.match_info)

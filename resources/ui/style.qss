@@ -22,7 +22,7 @@ QPushButton {
     border: 1px solid #2ecc71;
     border-radius: 5px;
     color: #2ecc71;
-    padding: 20px;
+    padding: 10px;
     font-size: 18px;
     margin: 0px;
 }
@@ -106,5 +106,35 @@ QComboBox QAbstractItemView {
 }
 
 QHLine {
+    color: white;
+}
+
+QFrame#playerSideFrame {
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+QPushButton[cssClass="playerSide"] {
+    border: 1px solid #1abc9c;
+    color: #1abc9c;
+}
+
+QPushButton[cssClass="playerSide"]:checked, QPushButton[cssClass="playerSide"]:pressed {
+    background-color: #1abc9c;
+    color: white;
+}
+
+QFrame#plantTimeFrame {
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+QPushButton[cssClass="plantTime"] {
+    border: 1px solid #27ae60;
+    color: #27ae60;
+}
+
+QPushButton[cssClass="plantTime"]:checked, QPushButton[cssClass="plantTime"]:pressed {
+    background-color: #27ae60;
     color: white;
 }

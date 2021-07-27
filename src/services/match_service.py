@@ -93,6 +93,8 @@ class MatchModel(BaseModel):
 
 class MatchService:
 
+    StatsVersion: int = 1
+
     def __init__(self, api_service: ApiService, map_service: MapService):
         self.api_service: ApiService = api_service
         self.map_service: MapService = map_service
@@ -217,8 +219,9 @@ class MatchService:
                     stored_model.map_id = match.map_id = match.get_map_id()
                     logger.debug(f"Set map_id to {match.map_id}")
                     modified = True
-                if match.stats is None:  # Stats have not been calculated for this match, do so now
-                    logger.debug(f'No stats found for match {match_id}!')
+                # Stats have not been calculated for this match or stats schema has been updated
+                if match.stats is None or match.stats.get('version', 0) != MatchService.StatsVersion:
+                    logger.debug(f'No updated stats found for match {match_id}!')
                     match.stats = self.analyze(match, self.map_service.get_map(match.map_id), puuid)
                     stored_model.stats = json.dumps(match.stats)
                     modified = True
@@ -281,16 +284,35 @@ class MatchService:
 
     def analyze(self, match: Match, game_map: GameMap, puuid: str):
         # Initialize analysis result dictionary
-        result: Dict = {'version': 0, 'attacker': {'zones': {}}, 'defender': {'zones': {}}}
+        result: Dict = {
+            'version': MatchService.StatsVersion,
+            'attacker': {
+                'preplant': {
+                    'zones': {}
+                },
+                'postplant': {
+                    'zones': {}
+                }
+            },
+            'defender': {
+                'preplant': {
+                    'zones': {}
+                },
+                'postplant': {
+                    'zones': {}
+                }
+            }
+        }
         for zone_name in game_map.get_zones():
-            result['attacker']['zones'][zone_name] = {
-                'k': 0, 'd': 0, 'events': []
-            }
-            result['defender']['zones'][zone_name] = {
-                'k': 0, 'd': 0, 'events': []
-            }
+            for side in ('attacker', 'defender'):
+                for plant_time in ('preplant', 'postplant'):
+                    result[side][plant_time]['zones'][zone_name] = {
+                        'k': 0, 'd': 0, 'events': []
+                    }
 
         player_team: str = match.get_player_team()
+
+        plant_times: List[int] = [game_round.get('plantRoundTime', 1000000) for game_round in match.get_rounds()]
 
         for kill_event in match.get_kills():
             event_pos: Optional[Dict[str, int]] = None
@@ -331,13 +353,19 @@ class MatchService:
                 logger.warning(f'Processed kill event with invalid team value of {player_team}')
                 continue
 
+            round_time: int = kill_event.get('roundTime', -1)
+            if round_time == -1:
+                logger.warning(f'Processed kill event with invalid round time')
+                continue
+            event_plant_time: str = 'preplant' if round_time < plant_times[round_id] else 'postplant'
+
             zone = game_map.get_zone_from_game_coords(event_pos['x'], event_pos['y'])
             if zone is None:
                 continue
 
-            result[event_side]['zones'][zone.name][stat_key] += 1
+            result[event_side][event_plant_time]['zones'][zone.name][stat_key] += 1
             if killer_pos is not None and victim_pos is not None:
-                result[event_side]['zones'][zone.name]['events'].append({
+                result[event_side][event_plant_time]['zones'][zone.name]['events'].append({
                     'r': role_value, 'k': [killer_pos['x'], killer_pos['y']], 'v': [victim_pos['x'], victim_pos['y']]
                 })
         return result

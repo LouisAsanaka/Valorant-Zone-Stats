@@ -9,7 +9,7 @@ from src.ui.views.map_tab.map_queue_type_view import MapQueueTypeView
 
 class MapQueueTypeController(QObject):
 
-    queue_type_changed: SignalInstance = Signal(str)
+    queue_type_changed = Signal(str)
 
     def __init__(self, map_queue_type_view: MapQueueTypeView):
         super().__init__()

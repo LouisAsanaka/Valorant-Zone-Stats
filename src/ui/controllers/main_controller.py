@@ -92,6 +92,7 @@ class MainController(QObject):
         self.map_filters_controller: MapFiltersController = MapFiltersController(
             self.main_view.map_tab.map_filters_view)
         self.map_filters_controller.player_side_changed.connect(self.draw_stats)
+        self.map_filters_controller.plant_time_changed.connect(self.draw_stats)
 
     def _init_map_queue_type_controller(self):
         self.map_queue_type_controller: MapQueueTypeController = MapQueueTypeController(
@@ -119,13 +120,14 @@ class MainController(QObject):
     def draw_stats(self):
         current_map_id: str = self.map_service.get_map_names()[self.map_list_controller.get_current_map_display_name()]
         current_side: str = self.map_filters_controller.get_side()
+        current_plant_time: str = self.map_filters_controller.get_plant_time()
         current_queue: str = self.map_queue_type_controller.get_queue_type()
 
         self.map_queue_type_controller.show_analytics(
             self.analytics_service.get_map_analytics(current_map_id))
         self.map_controller.set_map_and_stats(game_map=self.map_service.get_map(current_map_id),
                                               stats=self.analytics_service.get_stats(
-                                                  current_map_id, current_side, current_queue))
+                                                  current_map_id, current_queue, current_side, current_plant_time))
         self.map_controller.render_map_zones()
 
     @Slot()
