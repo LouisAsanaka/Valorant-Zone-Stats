@@ -1,6 +1,7 @@
 import sys
 import os
 import shutil
+import logging
 from typing import List
 from pathlib import Path
 
@@ -30,4 +31,19 @@ class FileManager:
                 shutil.move(from_path, FileManager.get_storage_path(path))
                 files_migrated += 1
         return files_migrated
+
+
+logger: logging.Logger = logging.getLogger('Valorant-Zone-Stats')
+logger.setLevel(logging.DEBUG)
+# create file handler
+fh = logging.FileHandler(FileManager.get_storage_path('debug.log'), mode='w')
+fh.setLevel(logging.DEBUG)
+
+# create formatter and add it to the handlers
+formatter = logging.Formatter(fmt='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                              datefmt='%H:%M:%S')
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+logger.debug('Initialized logger')
 

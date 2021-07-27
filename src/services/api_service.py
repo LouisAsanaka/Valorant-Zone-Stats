@@ -1,6 +1,6 @@
 from src.api.api import ValorantAPI
+from src.utils import logger
 
-import logging
 from typing import Optional, Tuple, Dict
 
 
@@ -19,8 +19,7 @@ class ApiService:
 
     def set_region(self, region: str):
         self.api.set_region_and_shard(region)
-        logging.debug(f'Current region: {self.api.region} | Shard: {self.api.shard}')
-    
+        logger.debug(f'Current region: {self.api.region} | Shard: {self.api.shard}')
 
     def try_auth(self) -> bool:
         self.puuid, _ = self.api.get_auth(force=True, cache_headers=True)

@@ -2,7 +2,6 @@ from PySide2.QtCore import *
 from PySide2.QtWidgets import *
 
 from pprint import pprint
-import logging
 from typing import Optional, Tuple
 import threading
 from threading import Thread
@@ -11,6 +10,7 @@ from src.services.api_service import ApiService
 from src.services.match_service import MatchService
 from src.models.models import PlayerData
 from src.ui.views.general_tab.general_tab import GeneralTab
+from src.utils import logger
 
 # from guppy import hpy
 # h = hpy()
@@ -32,8 +32,8 @@ class ProcessMatchWorker(QObject):
         self.thread.start()
 
     def run(self):
-        logging.debug(f'Running on {threading.current_thread().name}')
-        logging.debug(f'Fetching matches for {self.puuid}...')
+        logger.debug(f'Running on {threading.current_thread().name}')
+        logger.debug(f'Processing matches for {self.puuid}...')
         result = self.match_service.process_matches(self.puuid, lambda x: self.progress.emit(x))
         self.result.emit(result)
         self.finished.emit()

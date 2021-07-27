@@ -4,9 +4,10 @@ from datetime import datetime
 import json
 import math
 from typing import Iterator, Tuple, Dict, List, Optional, Union
-import logging
 
 from shapely.geometry import Point, Polygon
+
+from src.utils import logger
 
 
 class MapZone:
@@ -160,7 +161,7 @@ class PlayerData(QObject):
 
     def set_available_matches(self, matches: List[Match]):
         del self.available_matches
-        logging.debug(f'Loading {len(matches)} matches into the UI...')
+        logger.debug(f'Loading {len(matches)} matches into the UI...')
         self.available_matches = matches
         self.matches_changed.emit()
 

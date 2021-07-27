@@ -10,7 +10,7 @@ import urllib3
 import json
 import yaml
 from enum import Enum
-import logging
+from src.utils import logger
 
 urllib3.disable_warnings()
 
@@ -163,8 +163,8 @@ class ValorantAPI:
                 self.lockfile_contents = dict(zip(keys, data))
                 return self.lockfile_contents
         except Exception as e:
-            logging.error(f'Could not get contents of lockfile: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Could not get contents of lockfile: {str(e)}')
+            logger.error(traceback.format_exc())
             return None
 
     @staticmethod
@@ -179,8 +179,8 @@ class ValorantAPI:
                 cookies = yaml.safe_load(cookie_file)['private']['riot-login']['persist']['session']['cookies']
                 return cookies
         except Exception as e:
-            logging.error(f'Could not get contents of cookie file: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Could not get contents of cookie file: {str(e)}')
+            logger.error(traceback.format_exc())
             return None
 
     def _build_header(self, bearer_token: str, entitlement_token: str):
@@ -225,8 +225,8 @@ class ValorantAPI:
                 self.cached_headers = payload
             return puuid, payload
         except Exception as e:
-            logging.error(f'Could not authenticate with cookies: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Could not authenticate with cookies: {str(e)}')
+            logger.error(traceback.format_exc())
             return None, None
 
     def _auth_with_lockfile(self, force: bool, cache_headers: bool) -> Optional[Tuple[UUID, Headers]]:
@@ -245,8 +245,8 @@ class ValorantAPI:
                 self.cached_headers = payload
             return entitlements['subject'], payload
         except Exception as e:
-            logging.error(f'Could not authenticate with lockfile: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Could not authenticate with lockfile: {str(e)}')
+            logger.error(traceback.format_exc())
             return None, None
 
     def get_auth(self, force: bool = False, cache_headers: bool = True) -> Optional[Tuple[UUID, Headers]]:

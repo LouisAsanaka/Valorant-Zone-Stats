@@ -10,10 +10,8 @@ from peewee import Model, Metadata, SqliteDatabase, FixedCharField, CharField, D
 from playhouse.shortcuts import model_to_dict
 from playhouse.migrate import SqliteMigrator, migrate
 
-import logging
-
 from src.api.api import ValorantConstants
-from src.utils import FileManager
+from src.utils import FileManager, logger
 from src.services.api_service import ApiService
 from src.services.map_service import MapService
 from src.models.models import Match, GameMap
@@ -32,25 +30,25 @@ def execute_migrations():
     migrations = []
 
     if 'queue' not in columns:
-        logging.debug('Column "queue" does not exist! Migrating...')
+        logger.debug('Column "queue" does not exist! Migrating...')
         queue_field = CharField(default='competitive')
         migrations.append(migrator.add_column('matchmodel', 'queue', queue_field))
 
     if 'map_id' not in columns:
-        logging.debug('Column "map_id" does not exist! Migrating...')
+        logger.debug('Column "map_id" does not exist! Migrating...')
         map_id_field = CharField(default='')
         migrations.append(migrator.add_column('matchmodel', 'map_id', map_id_field))
 
     if 'stats' not in columns:
-        logging.debug('Column "stats" does not exist! Migrating...')
+        logger.debug('Column "stats" does not exist! Migrating...')
         stats_field = CharField(default=None, null=True)
         migrations.append(migrator.add_column('matchmodel', 'stats', stats_field))
 
     if migrations:
-        logging.debug(f'Performing {len(migrations)} migrations...')
+        logger.debug(f'Performing {len(migrations)} migrations...')
         migrate(*migrations)
     else:
-        logging.debug(f'No migrations needed.')
+        logger.debug(f'No migrations needed.')
 
 
 class ThreadSafeDatabaseMetadata(Metadata):
@@ -99,9 +97,9 @@ class MatchService:
         self.api_service: ApiService = api_service
         self.map_service: MapService = map_service
 
-        logging.debug(f'Current working directory: {os.getcwd()}')
-        logging.debug(f'Executable directory: {sys.executable}')
-        logging.debug(f'Storage directory: {FileManager.get_storage_path("")}')
+        logger.debug(f'Current working directory: {os.getcwd()}')
+        logger.debug(f'Executable directory: {sys.executable}')
+        logger.debug(f'Storage directory: {FileManager.get_storage_path("")}')
         db.init(FileManager.get_storage_path('matches.db'))
         db.connect()
         db.create_tables([MatchModel])
@@ -111,8 +109,8 @@ class MatchService:
             with open(FileManager.get_storage_path('storage.json'), 'r') as f:
                 self.ignored_match_ids: Dict = json.loads(f.read())
         except Exception as e:
-            logging.error(f'Could not load storage.json: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Could not load storage.json: {str(e)}')
+            logger.error(traceback.format_exc())
             self.ignored_match_ids = {}
 
     def _opposing_team(self, my_team: str) -> str:
@@ -163,7 +161,7 @@ class MatchService:
                                          match_info['matchInfo']['queueID'])
             map_id: str = match_info['matchInfo']['mapId']
 
-            logging.debug(f'({my_match_score} - {opponent_match_score}), {my_kills}/{my_deaths}/{my_assists}')
+            logger.debug(f'({my_match_score} - {opponent_match_score}), {my_kills}/{my_deaths}/{my_assists}')
 
             model = MatchModel.create(match_id=match_info['matchInfo']['matchId'], puuid=puuid, my_team=my_team,
                                       my_match_score=my_match_score, opponent_match_score=opponent_match_score,
@@ -172,8 +170,8 @@ class MatchService:
                                       queue=queue, stats=None, map_id=map_id)
             return model
         except KeyError as e:
-            logging.error(f'Malformed match info: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Malformed match info: {str(e)}')
+            logger.error(traceback.format_exc())
             return None
 
     def process_matches(self, puuid: str, progress_callback: Optional[Callable[[float], None]] = None):
@@ -196,7 +194,7 @@ class MatchService:
                 online_match_history.extend(result['History'])
                 expected_total += result['Total']
 
-            logging.debug(
+            logger.debug(
                 f'Found {len(online_match_history)} matches (expected {expected_total}) to process...')
 
             total_matches: int = len(stored_match_history) + len(online_match_history)
@@ -215,12 +213,12 @@ class MatchService:
 
                 modified: bool = False
                 if match.map_id is None or match.map_id == '':
-                    logging.debug(f'No map ID found for match {match_id}!')
+                    logger.debug(f'No map ID found for match {match_id}!')
                     stored_model.map_id = match.map_id = match.get_map_id()
-                    logging.debug(f"Set map_id to {match.map_id}")
+                    logger.debug(f"Set map_id to {match.map_id}")
                     modified = True
                 if match.stats is None:  # Stats have not been calculated for this match, do so now
-                    logging.debug(f'No stats found for match {match_id}!')
+                    logger.debug(f'No stats found for match {match_id}!')
                     match.stats = self.analyze(match, self.map_service.get_map(match.map_id), puuid)
                     stored_model.stats = json.dumps(match.stats)
                     modified = True
@@ -239,7 +237,7 @@ class MatchService:
             for match_entry in online_match_history:
                 match_id = match_entry['MatchID']
                 if match_id not in stored_match_history and match_id not in self.ignored_match_ids:
-                    logging.debug(f'Match with ID {match_id} not found, storing...')
+                    logger.debug(f'Match with ID {match_id} not found, storing...')
                     match_info = self.api_service.get_match_info(match_id)
                     # Only add 5v5s, no other custom gamemode
                     if match_info['matchInfo']['gameMode'] == '/Game/GameModes/Bomb/BombGameMode.BombGameMode_C':
@@ -261,8 +259,8 @@ class MatchService:
 
             all_matches.sort(key=lambda m: m.date, reverse=True)
         except Exception as e:  # not authenticated, use local matches
-            logging.error(f'Exception during match processing: {str(e)}')
-            logging.error(traceback.format_exc())
+            logger.error(f'Exception during match processing: {str(e)}')
+            logger.error(traceback.format_exc())
             # query = MatchModel.select().order_by(MatchModel.match_date.desc())
             # for match in query:
             #     all_matches.append(Match(match_model=model_to_dict(match)))
@@ -330,7 +328,7 @@ class MatchService:
                     event_side = 'attacker'
             # Invalid team value
             if event_side is None:
-                logging.warning(f'Processed kill event with invalid team value of {player_team}')
+                logger.warning(f'Processed kill event with invalid team value of {player_team}')
                 continue
 
             zone = game_map.get_zone_from_game_coords(event_pos['x'], event_pos['y'])
