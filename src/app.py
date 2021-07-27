@@ -12,6 +12,9 @@ from src.utils import logger
 
 class App(QApplication):
 
+    Version = '2.0.1'
+    Name = 'Valorant-Zone-Stats'
+
     def __init__(self, sys_argv):
         super(App, self).__init__(sys_argv)
 
@@ -42,6 +45,8 @@ if __name__ == '__main__':
     files_migrated: int = FileManager.migrate_files(['matches.db', 'settings.ini', 'storage.json', 'debug.log'])
 
     logger.debug(f"{files_migrated} files migrated.")
+
+    logger.info(f'Running {App.Name} v{App.Version}...')
 
     app = App(sys.argv)
     sys.exit(app.exec_())
