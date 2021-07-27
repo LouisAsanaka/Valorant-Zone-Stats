@@ -13,7 +13,7 @@ from playhouse.migrate import SqliteMigrator, migrate
 import logging
 
 from src.api.api import ValorantConstants
-from src.utils import get_executable_relative_path
+from src.utils import FileManager
 from src.services.api_service import ApiService
 from src.services.map_service import MapService
 from src.models.models import Match, GameMap
@@ -101,13 +101,14 @@ class MatchService:
 
         logging.debug(f'Current working directory: {os.getcwd()}')
         logging.debug(f'Executable directory: {sys.executable}')
-        db.init(get_executable_relative_path('matches.db'))
+        logging.debug(f'Storage directory: {FileManager.get_storage_path("")}')
+        db.init(FileManager.get_storage_path('matches.db'))
         db.connect()
         db.create_tables([MatchModel])
         execute_migrations()
 
         try:
-            with open(get_executable_relative_path('storage.json'), 'r') as f:
+            with open(FileManager.get_storage_path('storage.json'), 'r') as f:
                 self.ignored_match_ids: Dict = json.loads(f.read())
         except Exception as e:
             logging.error(f'Could not load storage.json: {str(e)}')
@@ -345,5 +346,5 @@ class MatchService:
 
     def on_close(self):
         db.close()
-        with open(get_executable_relative_path('storage.json'), 'w') as f:
+        with open(FileManager.get_storage_path('storage.json'), 'w') as f:
             f.write(json.dumps(self.ignored_match_ids))

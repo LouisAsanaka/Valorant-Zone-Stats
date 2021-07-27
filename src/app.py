@@ -1,14 +1,7 @@
 import os
 import sys
-from src.utils import get_executable_relative_path
+from src.utils import FileManager
 import logging
-
-# logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(filename=get_executable_relative_path('debug.log'),
-                    filemode='w',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.DEBUG)
 
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
@@ -45,6 +38,16 @@ if __name__ == '__main__':
     except AttributeError:
         wd = os.getcwd()
     os.chdir(wd)
+
+    files_migrated: int = FileManager.migrate_files(['matches.db', 'settings.ini', 'storage.json', 'debug.log'])
+
+    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(filename=FileManager.get_storage_path('debug.log'),
+                        filemode='w',
+                        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                        datefmt='%H:%M:%S',
+                        level=logging.DEBUG)
+    logging.debug(f"{files_migrated} files migrated.")
 
     app = App(sys.argv)
     sys.exit(app.exec_())

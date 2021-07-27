@@ -9,7 +9,7 @@ from src.services.analytics_service import AnalyticsService
 from src.services.api_service import ApiService
 from src.services.map_service import MapService
 from src.services.match_service import MatchService
-from src.utils import get_executable_relative_path
+from src.utils import FileManager
 from src.ui.controllers.general_tab.general_controller import GeneralController
 from src.ui.controllers.map_tab.map_controller import MapController
 from src.ui.controllers.map_tab.map_list_controller import MapListController
@@ -44,7 +44,7 @@ class MainController(QObject):
         super().__init__()
 
         self.player_data: PlayerData = PlayerData()
-        self.settings: QSettings = QSettings(get_executable_relative_path('settings.ini'), QSettings.IniFormat)
+        self.settings: QSettings = QSettings(FileManager.get_storage_path('settings.ini'), QSettings.IniFormat)
         self._init_settings()
 
         self.main_view: MainView = main_view
