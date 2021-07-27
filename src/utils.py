@@ -21,9 +21,6 @@ class FileManager:
 
     @staticmethod
     def migrate_files(file_paths: List[str]) -> int:
-        if not os.path.isdir(FileManager.get_storage_path('')):
-            os.mkdir(FileManager.get_storage_path(''))
-
         files_migrated: int = 0
         for path in file_paths:
             from_path: str = FileManager.get_executable_relative_path(path)
@@ -32,6 +29,9 @@ class FileManager:
                 files_migrated += 1
         return files_migrated
 
+
+if not os.path.isdir(FileManager.get_storage_path('')):
+    os.mkdir(FileManager.get_storage_path(''))
 
 logger: logging.Logger = logging.getLogger('Valorant-Zone-Stats')
 logger.setLevel(logging.DEBUG)
