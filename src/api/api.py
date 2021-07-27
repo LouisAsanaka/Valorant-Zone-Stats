@@ -136,19 +136,18 @@ class ValorantAPI:
         self.shard = self.get_shard(region)
 
     @staticmethod
-    def get_region(region: str):
-        if region.upper() in ValorantAPI.Regions:
-            if region.upper() in ValorantAPI.Region_Overrides.keys():
-                return ValorantAPI.Region_Overrides[region]
-            return region
+    def get_region(region: str) -> Optional[str]:
+        region = region.upper()
+        if region in ValorantAPI.Regions:
+            return ValorantAPI.Region_Overrides.get(region, region)
+        return ValorantAPI.Regions[0]
 
     @staticmethod
-    def get_shard(region: str):
-        if region.upper() in ValorantAPI.Regions:
-            if region in ValorantAPI.Shard_Overrides.keys():
-                return ValorantAPI.Shard_Overrides[region]
-            else:
-                return region
+    def get_shard(region: str) -> Optional[str]:
+        region = region.upper()
+        if region in ValorantAPI.Regions:
+            return ValorantAPI.Shard_Overrides.get(region, region)
+        return ValorantAPI.Regions[0]
 
     @staticmethod
     def get_lockfile_path() -> str:

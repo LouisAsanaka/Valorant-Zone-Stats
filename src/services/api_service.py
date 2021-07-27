@@ -18,7 +18,7 @@ class ApiService:
         return ValorantAPI.Regions
 
     def set_region(self, region: str):
-        self.api.set_region_and_shard(region.upper())
+        self.api.set_region_and_shard(region)
         logging.debug(f'Current region: {self.api.region} | Shard: {self.api.shard}')
     
 
