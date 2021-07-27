@@ -12,7 +12,7 @@ from src.utils import logger
 
 class App(QApplication):
 
-    Version = '2.0.1'
+    Version = '2.1.0'
     Name = 'Valorant-Zone-Stats'
 
     def __init__(self, sys_argv):
