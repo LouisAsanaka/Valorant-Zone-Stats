@@ -119,8 +119,8 @@ class ValorantAPI:
         self.version: Optional[str] = None
         self.lockfile_contents: Optional[Dict[str, str]] = None
         self.cookies_contents: Optional[ValorantAPI.Cookies] = None
-        self.region: str = self.set_region(region.upper())
-        self.shard: str = self.set_shard(region.upper())
+        self.region: str = self.get_region(region.upper())
+        self.shard: str = self.get_shard(region.upper())
         self.cached_headers: Optional[ValorantAPI.Headers] = None
 
     def _fill_headers(self, headers: Optional[Headers]):
@@ -131,13 +131,19 @@ class ValorantAPI:
                 return self.cached_headers
         return headers
 
-    def set_region(self, region: str):
+    def set_region_and_shard(self, region: str):
+        self.region = self.get_region(region)
+        self.shard = self.get_shard(region)
+
+    @staticmethod
+    def get_region(region: str):
         if region.upper() in ValorantAPI.Regions:
             if region.upper() in ValorantAPI.Region_Overrides.keys():
                 return ValorantAPI.Region_Overrides[region]
             return region
-        
-    def set_shard(self, region: str):
+
+    @staticmethod
+    def get_shard(region: str):
         if region.upper() in ValorantAPI.Regions:
             if region in ValorantAPI.Shard_Overrides.keys():
                 return ValorantAPI.Shard_Overrides[region]
