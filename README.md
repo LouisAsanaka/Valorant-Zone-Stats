@@ -43,7 +43,7 @@ Make sure the program is running on a computer where you are logged into VALORAN
 then click on the "Fetch Matches" button. This may take a while the first time, since it will be grabbing your recent 
 matches from VALORANT. If matches do not appear, try changing your region. 
 
-The regions are: NA (North America), AP (Asia Pacific), EU (Europe), KO (Korea).
+The regions are: NA (North America), AP (Asia Pacific), EU (Europe), KO (Korea), BR (Brazil), LATAM (Latin America)
 
 ![home page](resources/images/home.png)
 
