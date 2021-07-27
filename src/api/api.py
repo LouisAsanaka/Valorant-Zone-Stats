@@ -9,6 +9,7 @@ from typing import Optional, Dict, Tuple, Union, List
 import urllib3
 import json
 import yaml
+import re
 from enum import Enum
 from src.utils import logger
 
@@ -148,6 +149,16 @@ class ValorantAPI:
         if region in ValorantAPI.Regions:
             return ValorantAPI.Shard_Overrides.get(region, region)
         return ValorantAPI.Regions[0]
+
+    @staticmethod
+    def get_region_from_local_log() -> Optional[str]:
+        log_file: str = os.path.join(os.getenv('LOCALAPPDATA'), R'VALORANT\Saved\Logs\ShooterGame.log')
+        shared_url_regex = re.compile(r'shared\.(.+)\.a\.pvp\.net/v1/config/')
+        with open(log_file) as f:
+            for line in f:
+                if result := shared_url_regex.search(line):
+                    return result.group(1).upper()
+        return None
 
     @staticmethod
     def get_lockfile_path() -> str:

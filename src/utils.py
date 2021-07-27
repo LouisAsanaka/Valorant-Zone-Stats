@@ -44,6 +44,7 @@ formatter = logging.Formatter(fmt='%(asctime)s,%(msecs)d %(name)s %(levelname)s 
                               datefmt='%H:%M:%S')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 logger.debug('Initialized logger')
 

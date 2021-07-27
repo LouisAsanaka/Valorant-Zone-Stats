@@ -1,15 +1,16 @@
 from PySide2.QtCore import QObject, Slot, Signal, SignalInstance, QSettings
 
 from threading import Thread
-from typing import Optional, List, Tuple
+from typing import Optional, List
 
+from src.api.api import ValorantAPI
 from src.ui.views.main_view import MainView
 from src.models.models import PlayerData, Match
 from src.services.analytics_service import AnalyticsService
 from src.services.api_service import ApiService
 from src.services.map_service import MapService
 from src.services.match_service import MatchService
-from src.utils import FileManager
+from src.utils import FileManager, logger
 from src.ui.controllers.general_tab.general_controller import GeneralController
 from src.ui.controllers.map_tab.map_controller import MapController
 from src.ui.controllers.map_tab.map_list_controller import MapListController
@@ -44,6 +45,8 @@ class MainController(QObject):
         super().__init__()
 
         self.player_data: PlayerData = PlayerData()
+
+        self.is_region_set: bool = True
         self.settings: QSettings = QSettings(FileManager.get_storage_path('settings.ini'), QSettings.IniFormat)
         self._init_settings()
 
@@ -57,7 +60,9 @@ class MainController(QObject):
 
     def _init_settings(self):
         if not self.settings.contains('region'):
+            self.is_region_set = False
             self.settings.setValue('region', ApiService.get_regions()[0])
+            logger.debug('Region has not been set yet.')
 
     def _init_controllers(self):
         self._init_general_controller()
@@ -95,6 +100,13 @@ class MainController(QObject):
 
     def _init_services(self):
         self.api_service: ApiService = ApiService(self.settings.value('region', ApiService.get_regions()[0]))
+        if not self.is_region_set and (region := self.api_service.api.get_region_from_local_log()) is not None:
+            if region in ValorantAPI.Regions:
+                self.api_service.set_region(region)
+                self.settings.setValue('region', region)
+                logger.debug(f'Automatically detected region ({region})!')
+            else:
+                logger.debug(f'Region has been defaulted to {self.settings.value("region")}.')
 
         self.map_service: MapService = MapService()
         self.map_service.load_maps()

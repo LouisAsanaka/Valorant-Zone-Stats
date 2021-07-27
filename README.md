@@ -41,7 +41,8 @@ Explanations for each file:
 ## Usage
 Make sure the program is running on a computer where you are logged into VALORANT. Click on the "Fetch User" button, 
 then click on the "Fetch Matches" button. This may take a while the first time, since it will be grabbing your recent 
-matches from VALORANT. If matches do not appear, try changing your region. 
+matches from VALORANT. If matches do not appear, try changing your region (which is automatically detected the first
+time you run the program. 
 
 The regions are: NA (North America), AP (Asia Pacific), EU (Europe), KO (Korea), BR (Brazil), LATAM (Latin America)
 
