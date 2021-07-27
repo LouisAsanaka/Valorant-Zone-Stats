@@ -154,10 +154,14 @@ class ValorantAPI:
     def get_region_from_local_log() -> Optional[str]:
         log_file: str = os.path.join(os.getenv('LOCALAPPDATA'), R'VALORANT\Saved\Logs\ShooterGame.log')
         shared_url_regex = re.compile(r'shared\.(.+)\.a\.pvp\.net/v1/config/')
-        with open(log_file) as f:
-            for line in f:
-                if result := shared_url_regex.search(line):
-                    return result.group(1).upper()
+        try:
+            with open(log_file) as f:
+                for line in f:
+                    if result := shared_url_regex.search(line):
+                        return result.group(1).upper()
+        except Exception as e:
+            logger.error(f'Error occurred while reading VALORANT logs for region: {str(e)}')
+            logger.error(traceback.format_exc())
         return None
 
     @staticmethod
