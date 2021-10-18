@@ -4,7 +4,7 @@ from typing import Callable, Optional, List, Tuple, Dict, Any
 from PySide2.QtWidgets import *
 from PySide2.QtGui import *
 from PySide2.QtCore import *
-
+from src.api.api import ValorantConstants
 from src.models.models import GameMap, MapZone
 
 
@@ -176,7 +176,13 @@ class MapCanvas(QObject):
                 polygon.store_brushes(regular_brush=QBrush(QColor(255, 0, 0, 127), Qt.SolidPattern),
                                       highlighted_brush=QBrush(Qt.transparent, Qt.SolidPattern))
         self.scene.addItem(polygon)
-        text = self.draw_zone_text(zone, text=f'{int(presence * 100)}%\nKD: {round(kd, 2)}')
+        text_str = f'{int(presence * 100)}%\nKD: {round(kd, 2)}'
+        if ValorantConstants.DebugMatchUUID:
+            text_str += f'\n{zone.name}'
+        
+        text = self.draw_zone_text(zone, text=text_str)
+
+		
         return polygon, text
 
     def draw_zones(self, stats: Dict[str, Dict[str, Any]]):

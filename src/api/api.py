@@ -17,7 +17,9 @@ urllib3.disable_warnings()
 
 
 class ValorantConstants:
-
+    DebugMatchUUID="" #if not empty shorts _get_all_stored_match_ids to only return this match from the db below, does not fetch online matches, forces stats to re-parse as well
+    DebugForceOurPUUID=""
+    
     Maps = {
         'Port': 'Icebox',
         'Duality': 'Bind',
