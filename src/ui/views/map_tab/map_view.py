@@ -122,7 +122,7 @@ class MapCanvas(QObject):
         self.game_map = game_map
 
     def convert_normalized_to_pixel(self, norm_x: float, norm_y: float) -> Tuple[float, float]:
-        return norm_x * self.pixel_width, (1 - norm_y) * self.pixel_height
+        return norm_x * self.pixel_width, norm_y * self.pixel_height
 
     def draw_map(self):
         map_image = QPixmap(self.game_map.image_path).scaled(self.pixel_width, self.pixel_height)
