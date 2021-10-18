@@ -17,7 +17,7 @@ urllib3.disable_warnings()
 
 
 class ValorantConstants:
-
+    
     Maps = {
         'Port': 'Icebox',
         'Duality': 'Bind',
@@ -225,7 +225,10 @@ class ValorantAPI:
             # https://github.com/techchrism/valorant-api-docs/blob/trunk/docs/Riot%20Auth/GET%20Cookie%20Reauth.md
             redirect = session.get(ValorantAPI.REAUTH_URL, allow_redirects=False)
             redirect_url: str = redirect.headers['Location']
-            bearer_token = dict(parse.parse_qsl(parse.urlsplit(redirect_url).fragment))["access_token"]
+            res_dict = dict(parse.parse_qsl(parse.urlsplit(redirect_url).fragment))
+            if "access_token" not in res_dict:
+                raise Exception("No access_token found for cookie re-auth, is valorant launched? Will try fallback option.")
+            bearer_token = res_dict["access_token"]
 
             # Now get the entitlement token using the bearer token
             # https://github.com/techchrism/valorant-api-docs/blob/trunk/docs/Riot%20Auth/POST%20Entitlement.md
