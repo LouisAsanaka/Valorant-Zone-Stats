@@ -31,7 +31,7 @@ class MapZone:
             dx, dy = centroid.x - point[0], centroid.y - point[1]
             angle = math.degrees(math.atan2(dy, dx))
             weighed_distance = math.hypot(dx, dy) * 0.5
-            score = weighed_distance - weighed_distance * abs(angle + 45) / 180
+            score = weighed_distance - weighed_distance * abs(angle + -45) / 180
             if score > max_score:
                 top_left_point = point
                 max_score = score
@@ -56,7 +56,7 @@ class GameMap:
         self.zones: Dict[str, MapZone] = {}
         for zone in self.map_metadata['zones']:
             name: str = zone['name']
-            polygon = Polygon(map(lambda p: (p['x'], p['y']), zone['points']))
+            polygon = Polygon(map(lambda p: (p['x'], 1-p['y']), zone['points'])) #the files are stored with the zone  y's at 1-y so we need to reverse it back
             self.zones[name] = MapZone(name, polygon)
 
     def get_zones(self) -> Dict[str, MapZone]:
@@ -71,19 +71,10 @@ class GameMap:
                 return zone
         return None
 
-    @staticmethod
-    def _rotate_point(x: float, y: float) -> Tuple[float, float]:
-        # Rotate by -pi / 2 radians
-        # cos(-pi / 2) = 0, sin(-pi / 2) = -1
-        # px = cos * (x - ox) - sin * (y - oy) + ox
-        # py = sin * (x - ox) + cos * (y - oy) + oy
-        # (y - 0.5) + 0.5, -(x - 0.5) + 0.5
-        # y, -x + 1.0
-        return y, -x + 1.0
-
     def normalize_point(self, game_x: int, game_y: int) -> Tuple[float, float]:
-        # don't ask why, i couldn't figure out the proper math but this works
-        return self._rotate_point(game_x * self.scale_y + self.offset_y, game_y * self.scale_x + self.offset_x)
+        # Yes swapping the game_x and game_y here, this is correct
+        ret = (game_y * self.scale_x + self.offset_x, game_x * self.scale_y + self.offset_y)
+        return ret
 
 
 class Match:
