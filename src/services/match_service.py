@@ -127,6 +127,10 @@ class MatchService:
             return 'custom'
 
     def _get_all_stored_match_ids(self, puuid: str, queue: Optional[str] = None):
+        hashmap = {}
+        if ValorantConstants.DebugMatchUUID:
+            hashmap[ValorantConstants.DebugMatchUUID] = True
+            return hashmap
         if queue is None:
             query = MatchModel.select(MatchModel.match_id) \
                 .where(MatchModel.puuid == puuid) \
@@ -136,7 +140,7 @@ class MatchService:
                 .where(MatchModel.puuid == puuid, MatchModel.queue == queue) \
                 .order_by(MatchModel.match_date.desc())
 
-        hashmap = {}
+        
         for match in query:
             hashmap[match.match_id] = True
         return hashmap
@@ -191,13 +195,14 @@ class MatchService:
             # Get a list of matches from VALORANT
             online_match_history = []
             expected_total: int = 0
-            for queue in ApiService.QueueTypes:
-                result: Dict = self.api_service.get_all_match_history(puuid, queue=queue)
-                online_match_history.extend(result['History'])
-                expected_total += result['Total']
+            if not ValorantConstants.DebugMatchUUID:
+                for queue in ApiService.QueueTypes:
+                    result: Dict = self.api_service.get_all_match_history(puuid, queue=queue)
+                    online_match_history.extend(result['History'])
+                    expected_total += result['Total']
 
-            logger.debug(
-                f'Found {len(online_match_history)} matches (expected {expected_total}) to process...')
+                logger.debug(
+                    f'Found {len(online_match_history)} matches (expected {expected_total}) to process...')
 
             total_matches: int = len(stored_match_history) + len(online_match_history)
             matches_processed: int = 0
@@ -220,8 +225,8 @@ class MatchService:
                     logger.debug(f"Set map_id to {match.map_id}")
                     modified = True
                 # Stats have not been calculated for this match or stats schema has been updated
-                if match.stats is None or match.stats.get('version', 0) != MatchService.StatsVersion:
-                    logger.debug(f'No updated stats found for match {match_id}!')
+                if ValorantConstants.DebugMatchUUID or match.stats is None or match.stats.get('version', 0) != MatchService.StatsVersion:
+                    logger.debug(f'Going to update stats for match {match_id} on map: {match.map_id}!')
                     match.stats = self.analyze(match, self.map_service.get_map(match.map_id), puuid)
                     stored_model.stats = json.dumps(match.stats)
                     modified = True
@@ -240,6 +245,7 @@ class MatchService:
             for match_entry in online_match_history:
                 match_id = match_entry['MatchID']
                 if match_id not in stored_match_history and match_id not in self.ignored_match_ids:
+
                     logger.debug(f'Match with ID {match_id} not found, storing...')
                     match_info = self.api_service.get_match_info(match_id)
                     # Only add 5v5s, no other custom gamemode
@@ -313,7 +319,7 @@ class MatchService:
         player_team: str = match.get_player_team()
 
         plant_times: List[int] = [game_round.get('plantRoundTime', 1000000) for game_round in match.get_rounds()]
-
+        
         for kill_event in match.get_kills():
             event_pos: Optional[Dict[str, int]] = None
             role_value: Optional[str] = None
