@@ -11,6 +11,7 @@ from src.services.match_service import MatchService
 from src.models.models import PlayerData
 from src.ui.views.general_tab.general_tab import GeneralTab
 from src.utils import logger
+from src.api.api import ValorantConstants
 
 # from guppy import hpy
 # h = hpy()
@@ -56,7 +57,14 @@ class GeneralController(QObject):
         self.view: GeneralTab = general_view
         self.view.fetch_user_button.pressed.connect(self.on_fetch_user_pressed)
         self.view.fetch_matches_button.pressed.connect(self.on_fetch_matches_pressed)
-
+        if ValorantConstants.DebugMatchUUID:
+            if ValorantConstants.DebugForceOurPUUID:
+                self.player_data.set_puuid(ValorantConstants.DebugForceOurPUUID)
+                self.api_service.puuid = ValorantConstants.DebugForceOurPUUID
+            else:
+                self.on_fetch_user_pressed()
+            self.on_fetch_matches_pressed()
+        
         self.init_region_list()
 
     def init_region_list(self):
