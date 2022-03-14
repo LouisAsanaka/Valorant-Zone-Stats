@@ -1,7 +1,10 @@
 import requests as r
 from urllib import parse
 from pprint import pprint
+import ssl
 from requests.cookies import create_cookie
+from requests.adapters import HTTPAdapter
+from urllib3 import PoolManager
 import traceback
 import os
 import base64
@@ -10,6 +13,7 @@ import urllib3
 import json
 import yaml
 import re
+from collections import OrderedDict
 from enum import Enum
 from src.utils import logger
 
@@ -27,6 +31,7 @@ class ValorantConstants:
         'Ascent': 'Ascent',
         'Triad': 'Haven',
         'Foxtrot': 'Breeze',
+        'Canyon': 'Fracture',
         'Range': 'Range'
     }
 
@@ -56,6 +61,8 @@ class ValorantConstants:
         '8e253930-4c05-31dd-1b6c-968525494517': 'Omen',
         'add6443a-41bd-e414-f6ad-e58d267f4e95': 'Jett',
         '601dbbe7-43ce-be57-2a40-4abd24953621': 'KAY/O',
+        '22697a3d-45bf-8dd7-4fec-84a9e28c69d7': 'Chamber',
+        'bb2a4828-46eb-8cd1-e765-15848195d751': 'Neon',
         '': '?'
     }
 
@@ -81,9 +88,9 @@ class ValorantConstants:
         18: "Diamond 1",
         19: "Diamond 2",
         20: "Diamond 3",
-        21: "Immortal",
-        22: "None",
-        23: "None",
+        21: "Immortal 1",
+        22: "Immortal 2",
+        23: "Immortal 3",
         24: "Radiant"
     }
 
@@ -115,7 +122,8 @@ class ValorantAPI:
     }
     CLIENT_PLATFORM = 'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9'
 
-    REAUTH_URL: str = 'https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in&client_id=play-valorant-web-prod&response_type=token%20id_token'
+    INITIAL_AUTH_URL: str = 'https://auth.riotgames.com/api/v1/authorization'
+    REAUTH_URL: str = 'https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in&client_id=play-valorant-web-prod&response_type=token%20id_token&nonce=1'
     ENTITLEMENTS_URL: str = 'https://entitlements.auth.riotgames.com/api/token/v1'
 
     def __init__(self, region: str):
@@ -186,14 +194,14 @@ class ValorantAPI:
 
     @staticmethod
     def get_cookies_path() -> str:
-        return os.path.join(os.getenv('LOCALAPPDATA'), R'Riot Games\Riot Client\Data\RiotClientPrivateSettings.yaml')
+        return os.path.join(os.getenv('LOCALAPPDATA'), R'Riot Games\Riot Client\Data\RiotGamesPrivateSettings.yaml')
 
     def get_cookies(self, force: bool = False) -> Optional[Cookies]:
         if self.cookies_contents is not None and not force:
             return self.cookies_contents
         try:
             with open(ValorantAPI.get_cookies_path()) as cookie_file:
-                cookies = yaml.safe_load(cookie_file)['private']['riot-login']['persist']['session']['cookies']
+                cookies = yaml.safe_load(cookie_file)['riot-login']['persist']['session']['cookies']
                 return cookies
         except Exception as e:
             logger.error(f'Could not get contents of cookie file: {str(e)}')
@@ -210,6 +218,12 @@ class ValorantAPI:
 
     def _auth_with_cookies(self, force: bool, cache_headers: bool):
         try:
+            class SSLAdapter(HTTPAdapter):
+                def init_poolmanager(self, connections, maxsize, block=False):
+                    self.poolmanager = PoolManager(num_pools=connections,
+                                                   maxsize=maxsize,
+                                                   block=block,
+                                                   ssl_version=ssl.PROTOCOL_TLSv1_2)
             cookies = self.get_cookies(force=force)
             session = r.Session()
 
@@ -221,15 +235,32 @@ class ValorantAPI:
                                            path=cookie['path'],
                                            secure=cookie['secureOnly'], rest={'HttpOnly': cookie['httpOnly']})
                 session.cookies.set_cookie(cookie_obj)
+            print(session.cookies)
+            headers = OrderedDict({
+                'User-Agent': 'RiotClient/43.0.1.4195386.4190634 rso-auth (Windows; 10;;Professional, x64)'
+            })
+            session.mount("https://auth.riotgames.com", SSLAdapter())
+            session.headers = headers
 
             # Perform a reauth with stored cookies to get the entitlement token
             # Token is hidden in the redirect URL
             # https://github.com/techchrism/valorant-api-docs/blob/trunk/docs/Riot%20Auth/GET%20Cookie%20Reauth.md
-            redirect = session.get(ValorantAPI.REAUTH_URL, allow_redirects=False)
+            params = {
+                'client_id': "play-valorant-web-prod",
+                'nonce': 1,
+                'redirect_uri': "https://playvalorant.com/opt_in",
+                'response_type': "token id_token",
+                'scope': "account openid"
+            }
+            initial_auth = session.post(ValorantAPI.INITIAL_AUTH_URL, json=params, headers=headers, allow_redirects=False)
+            if initial_auth.status_code != 200:
+                raise Exception("Unable to perform initial auth. Falling back to lockfile...")
+            redirect = session.get(ValorantAPI.REAUTH_URL, headers=headers, allow_redirects=False)
+
             redirect_url: str = redirect.headers['Location']
             res_dict = dict(parse.parse_qsl(parse.urlsplit(redirect_url).fragment))
             if "access_token" not in res_dict:
-                raise Exception("No access_token found for cookie re-auth, is valorant launched? Will try fallback option.")
+                raise Exception("No access_token found for cookie re-auth. Are you logged into the Riot Client? Falling back to lockfile...")
             bearer_token = res_dict["access_token"]
 
             # Now get the entitlement token using the bearer token
