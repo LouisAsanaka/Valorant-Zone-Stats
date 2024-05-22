@@ -32,6 +32,9 @@ class ValorantConstants:
         'Triad': 'Haven',
         'Foxtrot': 'Breeze',
         'Canyon': 'Fracture',
+        'Pitt': 'Pearl', #This is how Pearl, Sunset, and Lotus are referred to within the game files
+        'Juliett': 'Sunset',
+        'Jam': 'Lotus',
         'Range': 'Range'
     }
 
@@ -41,7 +44,9 @@ class ValorantConstants:
         'spikerush': 'Spike Rush',
         'deathmatch': 'Deathmatch',
         'ggteam': 'Escalation',
-        'newmap': 'Breeze'
+        'newmap': 'NewMap',
+        'onefa': 'Replication', #best guess, this one doesnt matter as much as Rep hasn't been a part of the game for a while.
+        'HURM': 'Team Deathmatch' #this is my best guess as to how TDM is referred to in the game files
     }
 
     Agents = {
@@ -63,13 +68,19 @@ class ValorantConstants:
         '601dbbe7-43ce-be57-2a40-4abd24953621': 'KAY/O',
         '22697a3d-45bf-8dd7-4fec-84a9e28c69d7': 'Chamber',
         'bb2a4828-46eb-8cd1-e765-15848195d751': 'Neon',
+        '1dbf2edd-4729-0984-3115-daa5eed44993': 'Clove',
+        'e370fa57-4757-3604-3648-499e1f642d3f': 'Gekko',
+        'dade69b4-4f5a-8528-247b-219e5a1facd6': 'Fade',
+        '95b78ed7-4637-86d9-7e41-71ba8c293152': 'Harbor',
+        'cc8b64c8-4b25-4ff9-6e7f-37b4da43d235': 'Deadlock',
+        '0e38b510-41a8-5780-5e8f-568b2a4f2d6c': 'Iso',
         '': '?'
     }
 
     Ranks = {
         0: "Unrated",
-        1: "Unrated",
-        2: "Unused 1",
+        1: "Unused 1",
+        2: "Unused 2",
         3: "Iron 1",
         4: "Iron 2",
         5: "Iron 3",
@@ -88,10 +99,13 @@ class ValorantConstants:
         18: "Diamond 1",
         19: "Diamond 2",
         20: "Diamond 3",
-        21: "Immortal 1",
-        22: "Immortal 2",
-        23: "Immortal 3",
-        24: "Radiant"
+        21: "Ascendant 1",
+        22: "Ascendant 2",
+        23: "Ascendant 3",
+        24: "Immortal 1",
+        25: "Immortal 2",
+        26: "Immortal 3",
+        27: "Radiant"
     }
 
     SkinKeys = {
